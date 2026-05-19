@@ -22,7 +22,7 @@ export default function SharePoster({ result, onClose }) {
       const url = await generatePoster(result);
       setPosterUrl(url);
     } catch (e) {
-      console.error('Failed to generate poster:', e);
+      // Silently handle poster generation failure
     }
     setGenerating(false);
   }, [result]);

@@ -28,10 +28,8 @@ export default function HomePage({ onStart, onViewRanking, referralType }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Find referral type object
-  const referralTypeObj = referralType
-    ? AI_TYPES.find(t => t.id === referralType)
-    : null;
+  // referralType is already an AI type object (from getReferralType in shareUtils)
+  const referralTypeObj = referralType || null;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden">

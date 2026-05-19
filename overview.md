@@ -1,72 +1,100 @@
-# AIR·AI段位实况 - 交付概览
+# AIR·AI段位实况 - 爆火优化交付概览
 
 ## TL;DR
-基于 SBTI 人格测试爆火模式，开发了一款"AI使用段位"测试产品，12种荒诞人格类型 + 8维度评估 + 15道灵魂拷问，支持微信分享。
+从产品策略、视觉体验、社交传播三个维度全面升级，让用户第一眼被击中、测完忍不住分享、分享后带来新用户。
 
-## 产品信息
-- **产品名**: AIR·AI段位实况 (AI Rank Reality)
-- **副标题**: AI时代，你是青铜还是王者？还是……根本没登录？
-- **技术栈**: Vite + React + Tailwind CSS
-- **部署**: `npm run dev` 启动开发服务器，`npm run build` 构建生产版本
+## 交付状态
+- **构建**: npm run build 成功 ✅
+- **测试**: 152/152 通过 ✅（79原有 + 73新增）
+- **部署**: GitHub Actions 自动部署成功 ✅
+- **线上地址**: https://zhyisme.github.io/air-ai-rank/
 
-## 12种AI人格类型
+## 爆火优化核心功能
 
-| 代码 | 名称 | Emoji | 金句 |
-|------|------|-------|------|
-| SLAVE | AI奴隶 | 🤖 | 主人，请问还有什么吩咐？ |
-| WIZARD | AI巫师 | 🧙 | 只需一个Prompt…… |
-| OSTRICH | AI鸵鸟 | 🙈 | 什么AI？不关心，谢谢 |
-| FAKE | AI伪装者 | 🎭 | 这都是我自己写的！ |
-| POOPER | AI铲屎官 | 🧹 | 让我来修修这个烂输出…… |
-| GAMBLER | AI赌徒 | 🎰 | AI说的应该没错吧…… |
-| BABY | AI婴儿 | 🍼 | AI是什么？怎么用？ |
-| FIXER | AI修理工 | 🔧 | AI给个初稿，我来改 |
-| TRAITOR | AI叛徒 | 😈 | 我曾经是重度用户…… |
-| CLOWN | AI小丑 | 🤡 | 让AI写个辞职信哈哈哈 |
-| ADDICT | AI瘾君子 | 💊 | ChatGPT，我今天的早餐吃什么？ |
-| ORACLE | AI先知 | 🔮 | AI告诉我，未来的方向…… |
+### 1. 首屏核弹级吸引力
+- ✨ **粒子背景**: Canvas动态粒子系统，浮动AI符号+连线效果
+- ⌨️ **打字机效果**: 标题逐字揭示"你的AI灵魂是什么？"
+- 📈 **动态计数器**: "已有X人找到了答案"，实时递增
+- 💫 **CTA脉冲**: "开始灵魂探索"按钮呼吸动画
+- 👥 **好友邀请**: URL带personality参数时展示"你的朋友是🔮先知"
 
-## 8个评估维度
-1. 依赖度(DEP) - 离开AI能不能活
-2. 技能度(SKILL) - Prompt写得多6
-3. 信任度(TRUST) - 信不信AI的输出
-4. 使用频率(FREQ) - 多久用一次
-5. 使用深度(DEPTH) - 用AI做啥级别的事
-6. 伪装度(FAKE) - 会不会假装AI输出是自己做的
-7. 焦虑度(ANX) - 怕不怕被AI替代
-8. 创造力(CREAT) - 是复制粘贴还是创造性使用
+### 2. 答题上瘾设计
+- 📖 **3章节叙事**: 第一层"你真的会用AI吗？"→ 第二层"AI正在改变你的什么？"→ 第三层"灵魂拷问"
+- 🎯 **微反馈**: 选择后弹出emoji+文案（"扎心了！""被说中了！"），1.2s后消失
+- 🏁 **里程碑**: 进度1/3处"刚热身💫"、2/3处"灵魂拷问来了👀"
+- 🔄 **章节过渡**: 章节间显示悬念文案"你的AI依赖度正在浮现..."
+- 😄 **选项emoji**: 每个选项前缀emoji增强趣味
 
-## 产品特色
-- 🌙 暗色赛博朋克视觉风格
-- 📱 移动端优先，适配微信内置浏览器
-- 🎯 一题一页，自动跳转，流畅体验
-- 📊 SVG雷达图展示8维画像
-- 💬 灵魂拷问 - 每种类型2个扎心问题
-- 🏆 段位排行榜 - 社交攀比驱动
-- 📤 支持截图分享到朋友圈
+### 3. 结果页社交货币
+- 🎭 **揭晓仪式感**: 模糊→聚光灯→人格揭晓动画（~4.5s）
+- 🏆 **段位标签**: 青铜🥉 → 白银🥈 → 黄金🥇 → 铂金💎 → 钻石💠 → 王者👑
+- 📊 **稀有度**: "仅4.2%的人与你同频"
+- ⚔️ **超越率**: "你的AI段位超过了89%的人"
+- 🤝 **搭档配对**: 最佳搭档+最不合拍人格
+- 💬 **扎心金句**: 12种人格各有独特金句
 
-## SBTI爆火原因调研总结
-1. **荒诞标签** - 自嘲+辨识度极高，天然适合分享
-2. **零门槛** - 无需注册、免费、点开即测
-3. **社交货币** - "你SBTI是什么？"成为社交暗号
-4. **情绪共鸣** - 精准踩中年轻人疲惫/躺平/焦虑的集体情绪
-5. **反叛严肃** - "MBTI过时了"，以荒诞消解严肃
-6. **多维分析** - 15维度+雷达图，结果丰富有料
-7. **游戏化** - 排行榜、隐藏分支、互损属性
+### 4. 病毒传播闭环
+- 🖼️ **分享海报**: Canvas高清海报（人格+金句+雷达图+二维码）
+- 📱 **二维码**: 海报内置二维码，扫码直接进入测试
+- ✏️ **分享文案**: "我是🔮AI先知，你呢？测测你的AI段位→"
+- 🔗 **好友推荐**: 分享链接带personality参数，新用户看到个性化邀请
 
-## QA 验证结果
-- **测试**: 79/79 通过 ✅
-- **构建**: `npm run build` 成功 ✅
-- **12种类型可达性**: 全部12种类型均可通过特定答案组合触发 ✅
-- **已修复问题**:
-  - FAKE/ORACLE 类型不可达（分数范围不足）→ 已增加题目分数
-  - determineType 平局决胜偏向 → 已增加 conditionsMatched 优先级
-  - ResultPage 刷新崩溃 → 已添加 fallback 到首页
-  - FAKE 测试构造冲突 → 已调整测试分数避开 FIXER/SLAVE/POOPER
+### 5. Loading体验增强
+- 🔄 **趣味文案轮播**: "AI正在读取你的灵魂..."等7条文案
+
+## 12人格金句体系
+
+| 人格 | 短标签 | 金句 |
+|------|--------|------|
+| SLAVE | ⛓️奴隶 | 你以为你在用AI，其实是AI在用你 |
+| WIZARD | 🧙巫师 | 你把AI炼成了别人看不懂的魔法 |
+| OSTRICH | 🪿鸵鸟 | 你知道AI来了，但你选择把头埋进沙子 |
+| FAKE | 🎭伪装者 | 你嘴上说不用AI，背地里用得比谁都溜 |
+| POOPER | 🧹铲屎官 | 你天天给AI擦屁股，它还冲你叫 |
+| GAMBLER | 🎲赌徒 | 你把所有决策都押在了AI身上 |
+| BABY | 🍼婴儿 | AI是你的电子奶嘴，离开就哭 |
+| FIXER | 🔧修理工 | 别人用AI创作，你用AI修bug修到天亮 |
+| TRAITOR | 🗡️叛徒 | 你是人类阵营里最先叛变的那一个 |
+| CLOWN | 🤡小丑 | 你用AI整活的样子，比AI本身还好笑 |
+| ADDICT | 💉瘾君子 | 你不是在用AI，你是对AI上瘾了 |
+| ORACLE | 🔮先知 | 你已经在用AI预言未来，只是别人还不知道 |
+
+## 新增/修改文件清单
+
+### 新增文件（14个）
+- `src/data/ranks.js` — 段位等级定义
+- `src/data/compatibility.js` — 12人格兼容性矩阵
+- `src/data/chapters.js` — 3章节元数据
+- `src/data/microFeedback.js` — 答题反馈数据
+- `src/data/loadingTexts.js` — Loading趣味文案
+- `src/utils/rankCalculator.js` — 段位+稀有度+兼容性计算
+- `src/utils/posterGenerator.js` — Canvas海报生成器
+- `src/utils/shareUtils.js` — 分享文案+链接+参数解析
+- `src/components/ParticleBackground.jsx` — 粒子背景
+- `src/components/TypewriterText.jsx` — 打字机效果
+- `src/components/MicroFeedback.jsx` — 微反馈弹窗
+- `src/components/ResultReveal.jsx` — 揭晓动画
+- `src/components/SharePoster.jsx` — 海报预览+下载
+- `src/__tests__/viral-optimization.test.js` — 73个新测试
+
+### 修改文件（13个）
+- `src/data/types.js` — +goldenQuote, +shortLabel
+- `src/data/questions.js` — +chapter, +emoji, +feedback
+- `src/components/HomePage.jsx` — 全面重设计
+- `src/components/QuizPage.jsx` — 章节化+微反馈+里程碑
+- `src/components/LoadingPage.jsx` — 趣味文案轮播
+- `src/components/ResultPage.jsx` — 社交货币化
+- `src/components/RankingPage.jsx` — 段位展示增强
+- `src/components/RadarChart.jsx` — 适配迷你版
+- `src/App.jsx` — 好友推荐URL参数+流程集成
+- `src/index.css` — 新增动画keyframes
+- `index.html` — OG标签优化
+- `package.json` — +qrcode依赖
+- `package-lock.json` — 更新
 
 ## 用户下一步建议
-1. `cd C:\Users\zhyis\WorkBuddy\2026-05-19-task-1 && npm run dev` 启动本地演示
-2. 部署到 Vercel/Netlify 只需 `npm run build` 后上传 dist 目录
-3. 如需自定义域名，可在 vite.config.js 中配置 base 路径
-4. 可考虑增加"隐藏分支"（如SBTI的饮酒分支）增加趣味性
-5. 可接入后端实现真实的排行榜数据
+1. 🌐 访问 https://zhyisme.github.io/air-ai-rank/ 体验线上版本
+2. 🔗 分享链接到微信：带上 `?ref=share&personality=ORACLE` 参数可个性化入口
+3. 📱 在微信中打开体验完整分享流程
+4. 🎨 如需调整视觉风格，修改 `src/index.css` 中的全局样式变量
+5. 📊 如需真实排行榜数据，可接入后端 API 替换 localStorage 模拟
