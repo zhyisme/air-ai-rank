@@ -1,13 +1,12 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { generatePoster } from '../utils/posterGenerator';
-import { downloadImage, triggerShare, isWeChat } from '../utils/shareUtils';
+import { saveToAlbum, triggerShare, isWeChat } from '../utils/shareUtils';
 import AI_TYPES from '../data/types';
 
 /**
  * SharePoster — poster preview modal.
- * Auto-generates poster on mount. Optimized for WeChat long-press save.
- *
- * Converts data URL to Blob URL so WeChat browser allows long-press save.
+ * Auto-generates poster on mount.
+ * Uses saveToAlbum for multi-strategy image saving.
  *
  * @param {Object} result - { typeId, scores, timestamp }
  * @param {Function} onClose - Close callback
@@ -18,6 +17,7 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
   const [blobUrl, setBlobUrl] = useState(null);
   const [generating, setGenerating] = useState(true);
   const [shareStatus, setShareStatus] = useState('');
+  const [saveStatus, setSaveStatus] = useState('');
   const [showWeChatGuide, setShowWeChatGuide] = useState(false);
   const blobUrlRef = useRef(null);
 
@@ -74,9 +74,22 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
     handleGenerate();
   }, [handleGenerate]);
 
-  const handleDownload = useCallback(() => {
-    if (posterUrl) {
-      downloadImage(posterUrl, `AI段位实况_${type.name}.png`);
+  const handleSave = useCallback(async () => {
+    if (!posterUrl) return;
+    setSaveStatus('');
+    const result = await saveToAlbum(posterUrl, `AI段位实况_${type.name}.png`);
+    if (result === 'shared') {
+      setSaveStatus('shared');
+      setTimeout(() => setSaveStatus(''), 2000);
+    } else if (result === 'downloaded') {
+      setSaveStatus('downloaded');
+      setTimeout(() => setSaveStatus(''), 2000);
+    } else if (result === 'opened') {
+      setSaveStatus('opened');
+      setTimeout(() => setSaveStatus(''), 2000);
+    } else if (result === 'wechat-screenshot') {
+      setSaveStatus('screenshot');
+      setTimeout(() => setSaveStatus(''), 3000);
     }
   }, [posterUrl, type.name]);
 
@@ -117,12 +130,12 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
                 src={blobUrl || posterUrl}
                 alt="AI段位实况海报"
                 className="w-full"
-                style={{ touchAction: 'manipulation' }}
+                style={{ maxHeight: '55vh', objectFit: 'contain', touchAction: 'manipulation' }}
               />
-              {/* WeChat tip */}
+              {/* WeChat screenshot tip */}
               {inWeChat && (
-                <p className="text-[11px] text-gray-400 text-center mt-2 bg-white/5 py-1.5 rounded">
-                  👆 长按图片 → 保存到手机 → 分享到朋友圈
+                <p className="text-xs text-gray-400 text-center mt-2 bg-white/5 py-2 rounded">
+                  📸 长按图片或截图保存海报
                 </p>
               )}
             </div>
@@ -146,7 +159,7 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
           {posterUrl && (
             <div className="space-y-2">
               <button
-                className="cta-button w-full text-sm py-2.5"
+                className="cta-button w-full text-base py-3"
                 onClick={handleShare}
               >
                 {shareStatus === 'copied' ? '✅ 链接已复制' :
@@ -154,11 +167,21 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
                  '📤 分享给好友'}
               </button>
               <button
-                className="w-full text-sm py-2.5 px-6 rounded-full border border-gray-600 text-gray-300 hover:border-purple-500 hover:text-white transition-all"
-                onClick={handleDownload}
+                className="w-full text-base py-3 px-6 rounded-full border border-gray-600 text-gray-300 hover:border-purple-500 hover:text-white transition-all"
+                onClick={handleSave}
               >
-                📥 保存到相册
+                {saveStatus === 'shared' ? '✅ 已保存' :
+                 saveStatus === 'downloaded' ? '✅ 已下载' :
+                 saveStatus === 'opened' ? '✅ 已在新页面打开' :
+                 saveStatus === 'screenshot' ? '📸 请截图保存海报' :
+                 '💾 保存到相册'}
               </button>
+              {/* WeChat screenshot guide */}
+              {inWeChat && (
+                <p className="text-xs text-gray-400 text-center mt-2 bg-white/5 py-2 rounded">
+                  📸 微信内请截图保存海报，或点击"保存到相册"
+                </p>
+              )}
             </div>
           )}
         </div>

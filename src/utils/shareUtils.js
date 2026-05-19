@@ -72,15 +72,70 @@ export async function copyToClipboard(text) {
 }
 
 /**
- * Download a base64 data URL as an image file.
+ * Save poster image to phone album.
+ * Strategy order:
+ * 1. Web Share API with file → user can "Save Image" from share sheet (mobile non-WeChat)
+ * 2. <a download> (desktop, Chrome Android)
+ * 3. Open image in new window for long-press save (iOS, WeChat fallback)
+ * 4. WeChat screenshot fallback
+ *
+ * @param {string} dataUrl - base64 data URL of the poster
+ * @param {string} filename - filename for download
+ * @returns {Promise<string>} 'shared'|'downloaded'|'opened'|'wechat-screenshot'|'cancelled'|'failed'
  */
-export function downloadImage(dataUrl, filename) {
-  const link = document.createElement('a');
-  link.href = dataUrl;
-  link.download = filename || 'ai-rank-poster.png';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+export async function saveToAlbum(dataUrl, filename = 'AI段位实况海报.png') {
+  // Strategy 1: Web Share API with file (best for mobile - user gets system share sheet)
+  // In WeChat, navigator.share is not available, so this is skipped
+  if (typeof navigator.canShare === 'function' && !isWeChat()) {
+    try {
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], filename, { type: 'image/png' });
+      const shareData = { files: [file], title: 'AI段位实况海报' };
+      if (navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+        return 'shared';
+      }
+    } catch (e) {
+      if (e.name === 'AbortError') return 'cancelled';
+      // Fall through
+    }
+  }
+
+  // Strategy 2: <a download> (works on desktop, Chrome Android)
+  if (!isWeChat()) {
+    try {
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return 'downloaded';
+    } catch (e) {
+      // Fall through
+    }
+  }
+
+  // Strategy 3: Open image in a new window for long-press save
+  // This works on iOS Safari and might work in some WeChat versions
+  try {
+    const newWin = window.open('', '_blank');
+    if (newWin) {
+      newWin.document.write(`<!DOCTYPE html><html><head><title>保存海报</title><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5"></head><body style="margin:0;padding:16px;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh"><img src="${dataUrl}" style="max-width:100%;height:auto;border-radius:8px" /><p style="color:#9CA3AF;font-size:14px;margin-top:16px;text-align:center">👆 长按图片保存到手机<br/><span style="font-size:12px;color:#6B7280">保存后可分享到朋友圈</span></p><p style="margin-top:20px"><a href="javascript:window.close()" style="color:#6B7280;font-size:14px">✕ 关闭</a></p></body></html>`);
+      newWin.document.close();
+      return 'opened';
+    }
+  } catch (e) {
+    // Fall through
+  }
+
+  // Strategy 4: WeChat screenshot fallback
+  if (isWeChat()) {
+    return 'wechat-screenshot';
+  }
+
+  return 'failed';
 }
 
 /**
