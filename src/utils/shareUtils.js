@@ -20,10 +20,10 @@ export function isWeChat() {
 
 /**
  * Generate share text for a given AI type.
- * Format: "我是🔮AI先知，你呢？测测你的AI段位→"
+ * Format: "承认吧，这才是你的AI灵魂！我是🔮AI先知，你呢？"
  */
 export function generateShareText(type) {
-  return `我是${type.emoji}${type.name}，你呢？测测你的AI段位→`;
+  return `承认吧，这才是你的AI灵魂！我是${type.emoji}${type.name}，你呢？`;
 }
 
 /**

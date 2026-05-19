@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { generatePoster } from '../utils/posterGenerator';
 import { downloadImage, triggerShare, isWeChat } from '../utils/shareUtils';
 import AI_TYPES from '../data/types';
@@ -7,18 +7,55 @@ import AI_TYPES from '../data/types';
  * SharePoster — poster preview modal.
  * Auto-generates poster on mount. Optimized for WeChat long-press save.
  *
+ * Converts data URL to Blob URL so WeChat browser allows long-press save.
+ *
  * @param {Object} result - { typeId, scores, timestamp }
  * @param {Function} onClose - Close callback
  * @param {Function} onPosterReady - Called with poster data URL when ready
  */
 export default function SharePoster({ result, onClose, onPosterReady }) {
   const [posterUrl, setPosterUrl] = useState(null);
+  const [blobUrl, setBlobUrl] = useState(null);
   const [generating, setGenerating] = useState(true);
   const [shareStatus, setShareStatus] = useState('');
   const [showWeChatGuide, setShowWeChatGuide] = useState(false);
+  const blobUrlRef = useRef(null);
 
   const type = AI_TYPES.find(t => t.id === result.typeId) || AI_TYPES[0];
   const inWeChat = isWeChat();
+
+  // Convert data URL to Blob URL for WeChat long-press save support
+  useEffect(() => {
+    if (posterUrl && posterUrl.startsWith('data:')) {
+      fetch(posterUrl)
+        .then(res => res.blob())
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          // Revoke previous blob URL if any
+          if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
+            URL.revokeObjectURL(blobUrlRef.current);
+          }
+          blobUrlRef.current = url;
+          setBlobUrl(url);
+        })
+        .catch(() => {
+          // Fallback: use data URL directly
+          setBlobUrl(posterUrl);
+        });
+    } else if (posterUrl) {
+      setBlobUrl(posterUrl);
+    }
+  }, [posterUrl]);
+
+  // Cleanup blob URL on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
+    };
+  }, []);
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true);
@@ -74,10 +111,10 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
           </h3>
 
           {/* Poster preview */}
-          {posterUrl ? (
+          {(blobUrl || posterUrl) ? (
             <div className="mb-3 rounded-xl overflow-hidden">
               <img
-                src={posterUrl}
+                src={blobUrl || posterUrl}
                 alt="AI段位实况海报"
                 className="w-full"
                 style={{ touchAction: 'manipulation' }}

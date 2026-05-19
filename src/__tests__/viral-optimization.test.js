@@ -479,7 +479,7 @@ describe('generateShareText', () => {
   it('should format share text correctly', () => {
     const type = { emoji: '🔮', name: 'AI先知' };
     const text = generateShareText(type);
-    expect(text).toBe('我是🔮AI先知，你呢？测测你的AI段位→');
+    expect(text).toBe('承认吧，这才是你的AI灵魂！我是🔮AI先知，你呢？');
   });
 
   it('should include emoji and type name', () => {

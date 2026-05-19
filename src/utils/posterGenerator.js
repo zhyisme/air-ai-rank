@@ -19,9 +19,9 @@ export async function generatePoster(result) {
   const rank = calculateRank(result.scores);
   const rarity = calculateRarity(result.typeId);
 
-  // 2x DPI for retina
+  // 2x DPI for retina — canvas height increased to 1400 for larger elements
   const width = 750;
-  const height = 1334;
+  const height = 1500;
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -46,53 +46,53 @@ export async function generatePoster(result) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  // Emoji
-  ctx.font = '120px sans-serif';
-  ctx.fillText(type.emoji, width / 2, 200);
+  // Emoji — 160px
+  ctx.font = '160px sans-serif';
+  ctx.fillText(type.emoji, width / 2, 220);
 
-  // Type name
-  ctx.font = 'bold 56px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif';
+  // Type name — 72px
+  ctx.font = 'bold 72px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif';
   ctx.fillStyle = type.color;
-  ctx.fillText(type.name, width / 2, 320);
+  ctx.fillText(type.name, width / 2, 370);
 
-  // 3. Golden quote
-  ctx.font = '28px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif';
+  // 3. Golden quote — 36px
+  ctx.font = '36px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif';
   ctx.fillStyle = '#E5E7EB';
   const quoteText = `"${type.goldenQuote}"`;
-  wrapText(ctx, quoteText, width / 2, 400, 600, 40);
+  wrapText(ctx, quoteText, width / 2, 470, 620, 50);
 
-  // 4. Rank label
-  const rankY = 520;
-  ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, sans-serif';
+  // 4. Rank label — 42px
+  const rankY = 610;
+  ctx.font = 'bold 42px -apple-system, BlinkMacSystemFont, sans-serif';
   ctx.fillStyle = rank.color;
   ctx.fillText(`${rank.emoji} ${rank.name}段位`, width / 2, rankY);
 
-  // 5. Rarity info
-  ctx.font = '24px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif';
+  // 5. Rarity info — 30px
+  ctx.font = '30px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif';
   ctx.fillStyle = '#9CA3AF';
-  ctx.fillText(`仅 ${rarity}% 的人与你同频`, width / 2, rankY + 50);
+  ctx.fillText(`仅 ${rarity}% 的人与你同频`, width / 2, rankY + 60);
 
   // 6. Mini radar chart
-  drawMiniRadar(ctx, width / 2, 720, 150, result.scores, type.color);
+  drawMiniRadar(ctx, width / 2, 840, 150, result.scores, type.color);
 
-  // Dimension labels around radar
+  // Dimension labels around radar — 22px
   DIMENSIONS.forEach((dim, i) => {
     const angle = (Math.PI * 2 * i) / DIMENSIONS.length - Math.PI / 2;
     const labelR = 195;
     const lx = width / 2 + labelR * Math.cos(angle);
-    const ly = 720 + labelR * Math.sin(angle);
-    ctx.font = '18px -apple-system, BlinkMacSystemFont, sans-serif';
+    const ly = 840 + labelR * Math.sin(angle);
+    ctx.font = '22px -apple-system, BlinkMacSystemFont, sans-serif';
     ctx.fillStyle = '#9CA3AF';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(`${DIMENSION_LABELS[dim]} ${result.scores[dim] || 0}`, lx, ly);
   });
 
-  // 7. QR code
+  // 7. QR code — 240x240
   const qrData = `${BASE_URL}?ref=${result.typeId}&personality=${result.typeId}`;
   try {
     const qrDataUrl = await QRCode.toDataURL(qrData, {
-      width: 160,
+      width: 240,
       margin: 1,
       color: { dark: '#FFFFFF', light: '#0F0F1A00' },
     });
@@ -102,29 +102,31 @@ export async function generatePoster(result) {
       qrImg.onerror = reject;
       qrImg.src = qrDataUrl;
     });
-    ctx.drawImage(qrImg, width / 2 - 80, 1000, 160, 160);
+    ctx.drawImage(qrImg, width / 2 - 120, 1080, 240, 240);
   } catch (e) {
     // Fallback: draw a placeholder rectangle
     ctx.strokeStyle = '#4B5563';
     ctx.lineWidth = 2;
-    ctx.strokeRect(width / 2 - 80, 1000, 160, 160);
+    ctx.strokeRect(width / 2 - 120, 1080, 240, 240);
     ctx.fillStyle = '#6B7280';
-    ctx.font = '16px sans-serif';
-    ctx.fillText('扫码测试', width / 2, 1080);
+    ctx.font = '20px sans-serif';
+    ctx.fillText('扫码测试', width / 2, 1200);
   }
 
-  // 8. Brand identity
+  // 8. Brand identity — 32px
   ctx.fillStyle = '#6B7280';
-  ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillText('AIR·AI段位实况', width / 2, 1220);
-  ctx.font = '18px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillStyle = '#4B5563';
-  ctx.fillText(BASE_URL, width / 2, 1260);
+  ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillText('AIR·AI段位实况', width / 2, 1370);
 
-  // Short label tag
-  ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, sans-serif';
+  // URL — 24px
+  ctx.font = '24px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillStyle = '#4B5563';
+  ctx.fillText(BASE_URL, width / 2, 1410);
+
+  // Short label tag — 28px
+  ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, sans-serif';
   ctx.fillStyle = type.color;
-  ctx.fillText(type.shortLabel, width / 2, 1300);
+  ctx.fillText(type.shortLabel, width / 2, 1450);
 
   return canvas.toDataURL('image/png');
 }
