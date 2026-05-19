@@ -78,39 +78,11 @@ export async function copyToClipboard(text) {
 }
 
 /**
- * Convert data URL to Blob.
- */
-function dataURLtoBlob(dataurl) {
-  const arr = dataurl.split(',');
-  const mime = arr[0].match(/:(.*?);/)[1];
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
-  }
-  return new Blob([u8arr], { type: mime });
-}
-
-/**
  * Save poster image to phone album.
- * 
- * Strategy for WeChat:
- * 1. Open a clean page with the image embedded for long-press save
- * 2. Use blob URL if possible for better compatibility
- * 
- * Strategy for other browsers:
- * 1. Web Share API with file
- * 2. <a download>
- *
- * @param {string} dataUrl - base64 data URL of the poster
- * @param {string} filename - filename for download
- * @returns {Promise<string>} 'saved'|'downloaded'|'opened'|'failed'
  */
 export async function saveToAlbum(dataUrl, filename = 'AI灵魂海报.png') {
   // Non-WeChat browsers: use Web Share API or download link
   if (!isWeChat()) {
-    // Web Share API with file
     if (typeof navigator.canShare === 'function') {
       try {
         const response = await fetch(dataUrl);
@@ -122,13 +94,10 @@ export async function saveToAlbum(dataUrl, filename = 'AI灵魂海报.png') {
           return 'saved';
         }
       } catch (e) {
-        if (e.name !== 'AbortError') {
-          // Fall through to download
-        }
+        if (e.name !== 'AbortError') {}
       }
     }
 
-    // Download link fallback
     try {
       const link = document.createElement('a');
       link.href = dataUrl;
@@ -142,7 +111,7 @@ export async function saveToAlbum(dataUrl, filename = 'AI灵魂海报.png') {
     }
   }
 
-  // WeChat: Open a dedicated save page
+  // WeChat: Open a dedicated save page with proper close functionality
   try {
     const newWin = window.open('', '_blank');
     if (newWin) {
@@ -176,15 +145,20 @@ export async function saveToAlbum(dataUrl, filename = 'AI灵魂海报.png') {
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
       color: #FFFFFF;
-      font-size: 20px;
+      font-size: 18px;
       line-height: 44px;
       text-align: center;
       cursor: pointer;
       z-index: 100;
       -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .close-btn:active {
+      background: rgba(255,255,255,0.25);
+      transform: scale(0.95);
     }
     .poster-img {
       width: 100%;
@@ -223,19 +197,31 @@ export async function saveToAlbum(dataUrl, filename = 'AI灵魂海报.png') {
     <span>保存后可分享到朋友圈</span>
   </div>
   <script>
-    document.getElementById('closeBtn').addEventListener('click', function() {
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        window.close();
+    // Create history entry so back button works
+    history.pushState({ page: 'save' }, '', location.href);
+    
+    // Handle close button
+    function closePage() {
+      if (history.state && history.state.page === 'save') {
+        history.back();
       }
-    });
+      // Also try window.close as fallback after a delay
+      setTimeout(function() {
+        try { window.close(); } catch(e) {}
+      }, 100);
+    }
+    
+    document.getElementById('closeBtn').addEventListener('click', closePage);
     document.getElementById('closeBtn').addEventListener('touchend', function(e) {
       e.preventDefault();
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        window.close();
+      closePage();
+    });
+    
+    // Handle popstate (when user presses back)
+    window.addEventListener('popstate', function(e) {
+      if (e.state && e.state.page === 'save') {
+        // We're going back from our page, close the window
+        try { window.close(); } catch(e) {}
       }
     });
   </script>
@@ -254,16 +240,6 @@ export async function saveToAlbum(dataUrl, filename = 'AI灵魂海报.png') {
 
 /**
  * Trigger share functionality.
- * 
- * In WeChat: Opens a dedicated page with poster for saving,
- * user then shares manually from WeChat Moments.
- * 
- * Other browsers: Uses native share API with image.
- *
- * @param {Object} type - The AI type object
- * @param {string} typeId - Type ID for URL generation
- * @param {string} posterDataUrl - Base64 poster image
- * @returns {Promise<string>} Action taken
  */
 export async function triggerShare(type, typeId, posterDataUrl) {
   const shareText = generateShareText(type);
@@ -303,15 +279,20 @@ export async function triggerShare(type, typeId, posterDataUrl) {
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
       color: #FFFFFF;
-      font-size: 20px;
+      font-size: 18px;
       line-height: 44px;
       text-align: center;
       cursor: pointer;
       z-index: 100;
       -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .close-btn:active {
+      background: rgba(255,255,255,0.25);
+      transform: scale(0.95);
     }
     .title {
       color: #FFFFFF;
@@ -366,19 +347,31 @@ export async function triggerShare(type, typeId, posterDataUrl) {
     <span>保存后，在朋友圈点击相机图标选择这张图片</span>
   </div>
   <script>
-    document.getElementById('closeBtn').addEventListener('click', function() {
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        window.close();
+    // Create history entry so back button works
+    history.pushState({ page: 'share' }, '', location.href);
+    
+    // Handle close button
+    function closePage() {
+      if (history.state && history.state.page === 'share') {
+        history.back();
       }
-    });
+      // Also try window.close as fallback after a delay
+      setTimeout(function() {
+        try { window.close(); } catch(e) {}
+      }, 100);
+    }
+    
+    document.getElementById('closeBtn').addEventListener('click', closePage);
     document.getElementById('closeBtn').addEventListener('touchend', function(e) {
       e.preventDefault();
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        window.close();
+      closePage();
+    });
+    
+    // Handle popstate (when user presses back)
+    window.addEventListener('popstate', function(e) {
+      if (e.state && e.state.page === 'share') {
+        // We're going back from our page, close the window
+        try { window.close(); } catch(e) {}
       }
     });
   </script>
@@ -387,7 +380,6 @@ export async function triggerShare(type, typeId, posterDataUrl) {
         newWin.document.write(pageHtml);
         newWin.document.close();
         
-        // Copy share text
         await copyToClipboard(shareText);
         
         return 'wechat-save-page';
@@ -409,9 +401,7 @@ export async function triggerShare(type, typeId, posterDataUrl) {
         return 'shared';
       }
     } catch (e) {
-      if (e.name !== 'AbortError') {
-        // Fall through
-      }
+      if (e.name !== 'AbortError') {}
     }
   }
 
@@ -425,7 +415,6 @@ export async function triggerShare(type, typeId, posterDataUrl) {
     }
   }
 
-  // Fallback: Copy to clipboard
   const success = await copyToClipboard(`${shareText}\n${shareUrl}`);
   return success ? 'copied' : 'failed';
 }
