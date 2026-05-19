@@ -3,10 +3,8 @@ import AI_TYPES from '../data/types';
 import RANKS from '../data/ranks';
 import { calculateRank, calculateRarity } from './rankCalculator';
 
-/** Base URL for share links */
-const BASE_URL = typeof window !== 'undefined'
-  ? window.location.origin + '/air-ai-rank/'
-  : 'https://example.com/air-ai-rank/';
+/** Base URL for share links - Fixed to production URL */
+const BASE_URL = 'https://zhyisme.github.io/air-ai-rank/';
 
 /**
  * Generate a share poster as a data URL using Canvas.

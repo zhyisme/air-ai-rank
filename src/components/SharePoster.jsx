@@ -1,19 +1,17 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { generatePoster } from '../utils/posterGenerator';
 import { saveToAlbum, triggerShare, isWeChat } from '../utils/shareUtils';
 import AI_TYPES from '../data/types';
 
 /**
- * SharePoster — poster preview modal.
- * Auto-generates poster on mount.
- * Uses data URL for maximum compatibility with WeChat.
+ * SharePoster — poster preview modal with optimized save/share experience.
  */
 export default function SharePoster({ result, onClose, onPosterReady }) {
   const [posterUrl, setPosterUrl] = useState(null);
   const [generating, setGenerating] = useState(true);
   const [shareStatus, setShareStatus] = useState('');
   const [saveStatus, setSaveStatus] = useState('');
-  const [showTip, setShowTip] = useState(false);
+  const canvasRef = useRef(null);
 
   const type = AI_TYPES.find(t => t.id === result.typeId) || AI_TYPES[0];
   const inWeChat = isWeChat();
@@ -30,25 +28,37 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
     setGenerating(false);
   }, [result, onPosterReady]);
 
-  // Auto-generate on mount
   useEffect(() => {
     handleGenerate();
   }, [handleGenerate]);
 
+  // Draw poster on canvas for better long-press save in WeChat
+  useEffect(() => {
+    if (posterUrl && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+      };
+      img.src = posterUrl;
+    }
+  }, [posterUrl]);
+
   const handleSave = useCallback(async () => {
     if (!posterUrl) return;
-    setSaveStatus('');
-    // Always pass data URL - most reliable for WeChat
+    setSaveStatus('saving');
     const result = await saveToAlbum(posterUrl, `AI灵魂_${type.name}.png`);
-    if (result === 'shared') {
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus(''), 2000);
-    } else if (result === 'downloaded') {
+    if (result === 'saved' || result === 'downloaded') {
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus(''), 2000);
     } else if (result === 'opened') {
-      // Opened save page - no status needed as user is on new page
-    } else if (result === 'failed') {
+      setSaveStatus('opened');
+      setTimeout(() => setSaveStatus(''), 2000);
+    } else {
       setSaveStatus('failed');
       setTimeout(() => setSaveStatus(''), 3000);
     }
@@ -56,10 +66,10 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
 
   const handleShare = useCallback(async () => {
     if (!posterUrl) return;
-    setShareStatus('');
     const status = await triggerShare(type, result.typeId, posterUrl);
     if (status === 'wechat-save-page') {
-      // Opened share page with poster - user will share manually
+      setShareStatus('wechat-guide');
+      setTimeout(() => setShareStatus(''), 3000);
     } else if (status === 'copied') {
       setShareStatus('copied');
       setTimeout(() => setShareStatus(''), 2000);
@@ -69,9 +79,24 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
     }
   }, [type, result.typeId, posterUrl]);
 
+  const getShareButtonText = () => {
+    if (shareStatus === 'copied') return '✅ 已复制分享文案';
+    if (shareStatus === 'shared') return '✅ 已分享';
+    if (shareStatus === 'wechat-guide') return '✅ 请在新页面保存图片';
+    return '📤 分享给好友';
+  };
+
+  const getSaveButtonText = () => {
+    if (saveStatus === 'saving') return '⏳ 正在打开保存页面...';
+    if (saveStatus === 'saved') return '✅ 已保存';
+    if (saveStatus === 'opened') return '✅ 请长按保存图片';
+    if (saveStatus === 'failed') return '❌ 保存失败，请重试';
+    return '💾 保存到相册';
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
-      <div className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-sm max-h-[92vh] overflow-y-auto">
         {/* Close button */}
         <button
           className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
@@ -80,25 +105,38 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
           ✕
         </button>
 
-        <div className="glass-card p-4 pb-2">
+        <div className="glass-card p-4 pb-3">
           <h3 className="text-lg font-bold text-white text-center mb-2">
             你的专属海报
           </h3>
 
-          {/* Poster preview */}
+          {/* Poster preview - use canvas for better WeChat compatibility */}
           {posterUrl ? (
-            <div className="mb-3 rounded-xl overflow-hidden">
+            <div className="mb-3 rounded-xl overflow-hidden bg-[#0F0F1A]">
+              {/* Canvas for WeChat long-press save */}
+              <canvas
+                ref={canvasRef}
+                className="w-full block"
+                style={{ 
+                  maxHeight: '45vh', 
+                  objectFit: 'contain',
+                  touchAction: 'manipulation'
+                }}
+              />
+              {/* Fallback img for browsers that can't render canvas */}
               <img
                 src={posterUrl}
                 alt="AI灵魂海报"
-                className="w-full"
-                style={{ maxHeight: '42vh', objectFit: 'contain' }}
+                className="hidden"
+                crossOrigin="anonymous"
               />
-              {/* WeChat save tip */}
+              {/* WeChat tip */}
               {inWeChat && (
-                <p className="text-xs text-gray-400 text-center mt-2 bg-white/5 py-2 rounded">
-                  👆 长按图片可保存到手机
-                </p>
+                <div className="bg-gradient-to-r from-purple-900/50 to-pink-900/50 px-4 py-3 text-center">
+                  <p className="text-white text-sm font-medium">
+                    👆 长按上方图片可直接保存到手机
+                  </p>
+                </div>
               )}
             </div>
           ) : (
@@ -119,23 +157,31 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
 
           {/* Action buttons */}
           {posterUrl && (
-            <div className="space-y-2">
+            <div className="space-y-3">
+              {/* Share button */}
               <button
-                className="cta-button w-full text-lg py-3.5"
+                className="cta-button w-full text-lg py-4 rounded-xl font-semibold"
                 onClick={handleShare}
               >
-                {shareStatus === 'copied' ? '✅ 已复制到剪贴板' :
-                 shareStatus === 'shared' ? '✅ 已分享' :
-                 '📤 分享给好友'}
+                {getShareButtonText()}
               </button>
+
+              {/* Save button */}
               <button
-                className="w-full text-lg py-3.5 px-6 rounded-full border border-gray-600 text-gray-200 hover:border-purple-500 hover:text-white transition-all bg-white/5"
+                className="w-full text-lg py-4 px-6 rounded-xl font-semibold bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all"
                 onClick={handleSave}
               >
-                {saveStatus === 'saved' ? '✅ 已保存' :
-                 saveStatus === 'failed' ? '❌ 保存失败，请重试' :
-                 '💾 保存到相册'}
+                {getSaveButtonText()}
               </button>
+
+              {/* WeChat guidance */}
+              {inWeChat && (
+                <div className="bg-white/5 rounded-lg p-3 text-center">
+                  <p className="text-gray-300 text-sm">
+                    💡 <span className="text-gray-400">保存后</span>打开微信朋友圈，点击右上角相机📷选择图片发布
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
