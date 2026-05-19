@@ -197,32 +197,49 @@ export async function saveToAlbum(dataUrl, filename = 'AI灵魂海报.png') {
     <span>保存后可分享到朋友圈</span>
   </div>
   <script>
-    // Create history entry so back button works
-    history.pushState({ page: 'save' }, '', location.href);
+    // Get referrer URL for fallback close
+    var referrer = document.referrer || (window.opener ? window.opener.location.href : '${SITE_URL}') || '${SITE_URL}';
     
-    // Handle close button
-    function closePage() {
-      if (history.state && history.state.page === 'save') {
-        history.back();
-      }
-      // Also try window.close as fallback after a delay
-      setTimeout(function() {
-        try { window.close(); } catch(e) {}
-      }, 100);
+    // Try to close via opener first
+    function tryCloseViaOpener() {
+      try {
+        if (window.opener && !window.opener.closed) {
+          window.opener.focus();
+          window.close();
+          return true;
+        }
+      } catch(e) {}
+      return false;
     }
     
+    // Handle close button - try multiple methods
+    function closePage() {
+      // Method 1: Try window.close via opener
+      if (tryCloseViaOpener()) return;
+      
+      // Method 2: Navigate back via history if available
+      if (history.length > 1) {
+        history.back();
+        return;
+      }
+      
+      // Method 3: Navigate to referrer or homepage
+      window.location.href = referrer;
+    }
+    
+    // Bind close button events
     document.getElementById('closeBtn').addEventListener('click', closePage);
     document.getElementById('closeBtn').addEventListener('touchend', function(e) {
       e.preventDefault();
       closePage();
     });
     
-    // Handle popstate (when user presses back)
-    window.addEventListener('popstate', function(e) {
-      if (e.state && e.state.page === 'save') {
-        // We're going back from our page, close the window
-        try { window.close(); } catch(e) {}
-      }
+    // Handle popstate and pagehide events
+    window.addEventListener('popstate', function() {
+      tryCloseViaOpener();
+    });
+    window.addEventListener('pagehide', function() {
+      tryCloseViaOpener();
     });
   </script>
 </body>
@@ -347,32 +364,49 @@ export async function triggerShare(type, typeId, posterDataUrl) {
     <span>保存后，在朋友圈点击相机图标选择这张图片</span>
   </div>
   <script>
-    // Create history entry so back button works
-    history.pushState({ page: 'share' }, '', location.href);
+    // Get referrer URL for fallback close
+    var referrer = document.referrer || (window.opener ? window.opener.location.href : '${SITE_URL}') || '${SITE_URL}';
     
-    // Handle close button
-    function closePage() {
-      if (history.state && history.state.page === 'share') {
-        history.back();
-      }
-      // Also try window.close as fallback after a delay
-      setTimeout(function() {
-        try { window.close(); } catch(e) {}
-      }, 100);
+    // Try to close via opener first
+    function tryCloseViaOpener() {
+      try {
+        if (window.opener && !window.opener.closed) {
+          window.opener.focus();
+          window.close();
+          return true;
+        }
+      } catch(e) {}
+      return false;
     }
     
+    // Handle close button - try multiple methods
+    function closePage() {
+      // Method 1: Try window.close via opener
+      if (tryCloseViaOpener()) return;
+      
+      // Method 2: Navigate back via history if available
+      if (history.length > 1) {
+        history.back();
+        return;
+      }
+      
+      // Method 3: Navigate to referrer or homepage
+      window.location.href = referrer;
+    }
+    
+    // Bind close button events
     document.getElementById('closeBtn').addEventListener('click', closePage);
     document.getElementById('closeBtn').addEventListener('touchend', function(e) {
       e.preventDefault();
       closePage();
     });
     
-    // Handle popstate (when user presses back)
-    window.addEventListener('popstate', function(e) {
-      if (e.state && e.state.page === 'share') {
-        // We're going back from our page, close the window
-        try { window.close(); } catch(e) {}
-      }
+    // Handle popstate and pagehide events
+    window.addEventListener('popstate', function() {
+      tryCloseViaOpener();
+    });
+    window.addEventListener('pagehide', function() {
+      tryCloseViaOpener();
     });
   </script>
 </body>
