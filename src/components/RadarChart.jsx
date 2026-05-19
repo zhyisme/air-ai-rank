@@ -3,15 +3,18 @@ import { DIMENSIONS, DIMENSION_LABELS } from '../utils/calculator';
 
 /**
  * RadarChart component - draws an SVG radar chart for the 8 dimensions.
+ * Supports an optional `mini` mode for smaller display (e.g. poster).
+ *
  * @param {Object} scores - Dimension scores object { DEP: 45, SKILL: 72, ... }
  * @param {string} typeColor - The hex color for the matched type
+ * @param {boolean} mini - Whether to render in mini mode (smaller size, no labels)
  */
-export default function RadarChart({ scores, typeColor = '#8B5CF6' }) {
-  const size = 280;
+export default function RadarChart({ scores, typeColor = '#8B5CF6', mini = false }) {
+  const size = mini ? 180 : 280;
   const centerX = size / 2;
   const centerY = size / 2;
-  const maxRadius = 105;
-  const levels = 4; // Grid levels (25, 50, 75, 100)
+  const maxRadius = mini ? 65 : 105;
+  const levels = 4;
 
   const points = useMemo(() => {
     return DIMENSIONS.map((dim, i) => {
@@ -28,7 +31,6 @@ export default function RadarChart({ scores, typeColor = '#8B5CF6' }) {
     });
   }, [scores, centerX, centerY, maxRadius]);
 
-  // Generate grid polygon points for each level
   const gridPoints = useMemo(() => {
     return Array.from({ length: levels }).map((_, level) => {
       const r = ((level + 1) / levels) * maxRadius;
@@ -39,16 +41,14 @@ export default function RadarChart({ scores, typeColor = '#8B5CF6' }) {
     });
   }, [centerX, centerY, maxRadius]);
 
-  // Data polygon points
   const dataPoints = points.map(p => `${p.x},${p.y}`).join(' ');
 
-  // Axis lines and label positions
   const axisLines = DIMENSIONS.map((dim, i) => {
     const angle = (Math.PI * 2 * i) / DIMENSIONS.length - Math.PI / 2;
     const outerX = centerX + (maxRadius + 8) * Math.cos(angle);
     const outerY = centerY + (maxRadius + 8) * Math.sin(angle);
-    const labelX = centerX + (maxRadius + 28) * Math.cos(angle);
-    const labelY = centerY + (maxRadius + 28) * Math.sin(angle);
+    const labelX = centerX + (maxRadius + (mini ? 18 : 28)) * Math.cos(angle);
+    const labelY = centerY + (maxRadius + (mini ? 18 : 28)) * Math.sin(angle);
     return { dim, outerX, outerY, labelX, labelY, angle };
   });
 
@@ -88,7 +88,7 @@ export default function RadarChart({ scores, typeColor = '#8B5CF6' }) {
         points={dataPoints}
         fill={`${typeColor}20`}
         stroke={typeColor}
-        strokeWidth="2"
+        strokeWidth={mini ? "1.5" : "2"}
         strokeLinejoin="round"
       />
 
@@ -98,18 +98,17 @@ export default function RadarChart({ scores, typeColor = '#8B5CF6' }) {
           key={i}
           cx={p.x}
           cy={p.y}
-          r="3.5"
+          r={mini ? "2.5" : "3.5"}
           fill={typeColor}
           stroke="#0F0F1A"
           strokeWidth="1.5"
         />
       ))}
 
-      {/* Labels */}
-      {axisLines.map((axis, i) => {
+      {/* Labels - skip in mini mode */}
+      {!mini && axisLines.map((axis, i) => {
         const dim = axis.dim;
         const score = scores[dim] || 0;
-        // Adjust text anchor based on position
         let textAnchor = 'middle';
         if (axis.angle > -0.3 && axis.angle < 0.3) textAnchor = 'start';
         if (axis.angle > 2.8 || axis.angle < -2.8) textAnchor = 'end';

@@ -1,0 +1,29 @@
+sequenceDiagram
+    participant U as 用户
+    participant RP as ResultPage
+    participant SP as SharePoster
+    participant PG as PosterGenerator
+    participant QR as qrcode lib
+    participant RC as RankCalculator
+
+    U->>RP: 点击"生成分享海报"
+    RP->>RC: calculateRank(scores)
+    RC-->>RP: RANK 对象
+    RP->>RC: calculateRarity(typeId)
+    RC-->>RP: rarity=4.2
+    RP->>RC: getCompatibility(typeId)
+    RC-->>RP: COMPATIBILITY 对象
+    RP->>SP: 传入 type, scores, rank, rarity
+    SP->>PG: generatePoster(type, scores, rank, rarity)
+    PG->>PG: drawBackground(ctx, type.color)
+    PG->>PG: drawTitle(ctx, type.emoji, type.name)
+    PG->>PG: drawGoldenQuote(ctx, type.goldenQuote)
+    PG->>PG: drawRank(ctx, rank)
+    PG->>PG: drawRarity(ctx, rarity)
+    PG->>PG: drawMiniRadar(ctx, scores, type.color)
+    PG->>QR: toDataURL(shareUrl)
+    QR-->>PG: qrDataUrl
+    PG->>PG: drawQRCode(ctx, qrDataUrl)
+    PG->>PG: drawBranding(ctx)
+    PG-->>SP: posterDataUrl (base64)
+    SP->>U: 展示海报预览 + 下载/分享按钮

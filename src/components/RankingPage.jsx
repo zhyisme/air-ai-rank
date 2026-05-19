@@ -1,9 +1,12 @@
 import React, { useMemo } from 'react';
 import AI_TYPES from '../data/types';
+import RANKS from '../data/ranks';
 import { getInitialRanking } from '../utils/calculator';
+import { calculateRank } from '../utils/rankCalculator';
 
 /**
- * RankingPage component - shows the ranking distribution of all AI types.
+ * RankingPage component - enhanced with rank tier badges next to each type.
+ *
  * @param {Function} onBack - Callback to go back to result page
  */
 export default function RankingPage({ onBack }) {
@@ -39,12 +42,39 @@ export default function RankingPage({ onBack }) {
         <p className="text-xs text-gray-500 mt-1 ml-8">共 {total.toLocaleString()} 人完成测试</p>
       </div>
 
+      {/* Rank tier legend */}
+      <div className="px-4 py-3 flex items-center gap-2 overflow-x-auto">
+        {RANKS.map(rank => (
+          <span
+            key={rank.id}
+            className="shrink-0 text-xs font-bold px-2.5 py-1 rounded-full"
+            style={{ background: rank.color + '20', color: rank.color }}
+          >
+            {rank.emoji} {rank.name}
+          </span>
+        ))}
+      </div>
+
       {/* Ranking List */}
       <div className="px-4 py-4 space-y-2.5">
         {sortedTypes.map((type, index) => {
           const count = ranking[type.id] || 0;
           const percentage = total > 0 ? ((count / total) * 100) : 0;
           const barWidth = (count / maxCount) * 100;
+
+          // Calculate rank for this type based on a simulated average score
+          // Use the midpoint of condition ranges as a representative score
+          const repScores = {};
+          const allDims = ['DEP', 'SKILL', 'TRUST', 'FREQ', 'DEPTH', 'FAKE', 'ANX', 'CREAT'];
+          allDims.forEach(dim => {
+            const cond = type.conditions[dim];
+            if (cond) {
+              repScores[dim] = Math.round((cond[0] + cond[1]) / 2);
+            } else {
+              repScores[dim] = 40; // Default moderate score
+            }
+          });
+          const typeRank = calculateRank(repScores);
 
           return (
             <div
@@ -64,13 +94,20 @@ export default function RankingPage({ onBack }) {
                 </span>
                 {/* Emoji */}
                 <span className="text-lg">{type.emoji}</span>
-                {/* Name & ID */}
+                {/* Name & ID + Rank Badge */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2">
+                  <div className="flex items-baseline gap-2 flex-wrap">
                     <span className="font-bold text-sm" style={{ color: type.color }}>
                       {type.name}
                     </span>
                     <span className="text-xs text-gray-600 font-mono">{type.id}</span>
+                    {/* Rank tier badge */}
+                    <span
+                      className="text-xs font-bold px-1.5 py-0.5 rounded"
+                      style={{ background: typeRank.color + '20', color: typeRank.color }}
+                    >
+                      {typeRank.emoji}{typeRank.name}
+                    </span>
                   </div>
                 </div>
                 {/* Percentage */}

@@ -5,6 +5,7 @@ import LoadingPage from './components/LoadingPage';
 import ResultPage from './components/ResultPage';
 import RankingPage from './components/RankingPage';
 import { calculateScores, determineType, saveResult, updateRanking, loadResult } from './utils/calculator';
+import { parseReferralParams, getReferralType } from './utils/shareUtils';
 import QUESTIONS from './data/questions';
 
 /** Page state constants */
@@ -24,7 +25,10 @@ export default function App() {
   });
   const [answers, setAnswers] = useState(new Array(QUESTIONS.length).fill(null));
   const [result, setResult] = useState(() => loadResult());
-  const [direction, setDirection] = useState('forward'); // 'forward' | 'back'
+  const [direction, setDirection] = useState('forward');
+
+  // Parse referral params from URL on mount
+  const referralType = getReferralType();
 
   const handleStart = useCallback(() => {
     setDirection('forward');
@@ -77,7 +81,11 @@ export default function App() {
       <div className="w-full max-w-[430px] min-h-screen relative overflow-hidden">
         {page === PAGES.HOME && (
           <div key="home" className={animationClass}>
-            <HomePage onStart={handleStart} onViewRanking={handleViewRanking} />
+            <HomePage
+              onStart={handleStart}
+              onViewRanking={handleViewRanking}
+              referralType={referralType}
+            />
           </div>
         )}
         {page === PAGES.QUIZ && (
@@ -105,7 +113,11 @@ export default function App() {
           </div>
         ) : page === PAGES.RESULT && !result ? (
           <div key="home" className={animationClass}>
-            <HomePage onStart={handleStart} onViewRanking={handleViewRanking} />
+            <HomePage
+              onStart={handleStart}
+              onViewRanking={handleViewRanking}
+              referralType={referralType}
+            />
           </div>
         ) : null}
         {page === PAGES.RANKING && (

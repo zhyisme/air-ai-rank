@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { DIMENSION_LABELS, DIMENSIONS } from '../utils/calculator';
+import LOADING_TEXTS from '../data/loadingTexts';
 
 /**
- * LoadingPage component - shows an analysis animation before results.
+ * LoadingPage component - enhanced with fun text carousel and dimension scrolling.
+ * Shows pulsing orb + rotating loading texts + dimension labels.
  */
 export default function LoadingPage() {
   const [currentDim, setCurrentDim] = useState(0);
   const [dots, setDots] = useState('');
+  const [textIndex, setTextIndex] = useState(0);
+  const [textFade, setTextFade] = useState(true);
 
   // Cycle through dimension names
   useEffect(() => {
@@ -21,6 +25,18 @@ export default function LoadingPage() {
     const interval = setInterval(() => {
       setDots(prev => prev.length >= 3 ? '' : prev + '.');
     }, 400);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Rotate loading texts every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTextFade(false);
+      setTimeout(() => {
+        setTextIndex(prev => (prev + 1) % LOADING_TEXTS.length);
+        setTextFade(true);
+      }, 300);
+    }, 2000);
     return () => clearInterval(interval);
   }, []);
 
@@ -63,9 +79,14 @@ export default function LoadingPage() {
 
       {/* Main text */}
       <div className="text-center relative z-10">
-        <h2 className="text-xl font-bold text-white mb-4">
-          正在分析你的AI使用DNA{dots}
-        </h2>
+        {/* Fun loading text carousel */}
+        <div className="h-10 mb-4 flex items-center justify-center">
+          <h2
+            className={`text-xl font-bold text-white transition-opacity duration-300 ${textFade ? 'opacity-100' : 'opacity-0'}`}
+          >
+            {LOADING_TEXTS[textIndex]}
+          </h2>
+        </div>
 
         {/* Scrolling dimension labels */}
         <div className="h-8 overflow-hidden mb-6">
@@ -98,6 +119,9 @@ export default function LoadingPage() {
             />
           ))}
         </div>
+
+        {/* Animated dots */}
+        <p className="text-sm text-gray-500 mt-4">{dots}</p>
       </div>
     </div>
   );

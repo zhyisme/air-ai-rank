@@ -1,0 +1,107 @@
+classDiagram
+    direction TB
+
+    class AI_TYPE {
+        +string id
+        +string name
+        +string emoji
+        +string tagline
+        +string description
+        +string[] soulQuestions
+        +string color
+        +object conditions
+        +string goldenQuote
+        +string shortLabel
+    }
+
+    class RANK {
+        +string id
+        +string name
+        +string emoji
+        +string color
+        +number minScore
+        +number maxScore
+    }
+
+    class COMPATIBILITY {
+        +string typeId
+        +string bestMatchId
+        +string bestMatchLabel
+        +string bestMatchDesc
+        +string worstMatchId
+        +string worstMatchLabel
+        +string worstMatchDesc
+    }
+
+    class CHAPTER {
+        +number id
+        +string title
+        +string subtitle
+        +string transitionText
+        +string milestoneText_1_3
+        +string milestoneText_2_3
+    }
+
+    class MICRO_FEEDBACK {
+        +string emoji
+        +string text
+    }
+
+    class LOADING_TEXT {
+        +string text
+        +number duration
+    }
+
+    class QUESTION {
+        +number id
+        +string text
+        +number chapter
+        +OPTION[] options
+    }
+
+    class OPTION {
+        +string text
+        +object scores
+        +string emoji
+        +string feedback
+    }
+
+    class RankCalculator {
+        +calculateRank(scores) RANK
+        +calculateRarity(typeId) number
+        +getCompatibility(typeId) COMPATIBILITY
+        +getBestMatch(typeId) AI_TYPE
+        +getWorstMatch(typeId) AI_TYPE
+    }
+
+    class PosterGenerator {
+        +generatePoster(type, scores, rank, rarity) Promise~string~
+        -drawBackground(ctx, type)
+        -drawTitle(ctx, type)
+        -drawGoldenQuote(ctx, type)
+        -drawRank(ctx, rank)
+        -drawRarity(ctx, rarity)
+        -drawMiniRadar(ctx, scores, type)
+        -drawQRCode(ctx, url)
+        -drawBranding(ctx)
+    }
+
+    class ShareUtils {
+        +generateShareText(type) string
+        +generateShareUrl(typeId) string
+        +parseReferralParams() object
+        +copyToClipboard(text) Promise
+        +downloadImage(dataUrl, filename) void
+    }
+
+    AI_TYPE --> RANK : ranked by
+    AI_TYPE --> COMPATIBILITY : has
+    QUESTION --> CHAPTER : belongs to
+    QUESTION --> OPTION : contains
+    OPTION --> MICRO_FEEDBACK : triggers
+    RankCalculator --> AI_TYPE : references
+    RankCalculator --> RANK : returns
+    RankCalculator --> COMPATIBILITY : queries
+    PosterGenerator --> AI_TYPE : renders
+    PosterGenerator --> RANK : renders
+    ShareUtils --> AI_TYPE : formats
