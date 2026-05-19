@@ -32,28 +32,23 @@ export default function ResultPage({ result, onRetake, onViewRanking }) {
     setRevealComplete(true);
   }, []);
 
-  const handleCopyLink = useCallback(async () => {
-    const url = generateShareUrl(result.typeId);
-    const success = await copyToClipboard(url);
-    setCopied(success);
-    setTimeout(() => setCopied(false), 2000);
-  }, [result.typeId]);
-
-  const handleShareNative = useCallback(async () => {
+  const handleShare = useCallback(async () => {
     const text = generateShareText(type);
     const url = generateShareUrl(result.typeId);
 
     if (navigator.share) {
       try {
         await navigator.share({ title: 'AIR·AI段位实况', text, url });
+        return;
       } catch (e) {
-        // User cancelled
+        // User cancelled, fall through to clipboard
       }
-    } else {
-      await copyToClipboard(`${text}\n${url}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     }
+
+    // Fallback: copy to clipboard
+    const success = await copyToClipboard(`${text}\n${url}`);
+    setCopied(success);
+    setTimeout(() => setCopied(false), 2000);
   }, [type, result.typeId]);
 
   // Show reveal animation first
@@ -245,15 +240,9 @@ export default function ResultPage({ result, onRetake, onViewRanking }) {
             </button>
             <button
               className="text-sm py-3 px-5 rounded-full border border-gray-600 text-gray-300 hover:border-purple-500 hover:text-white transition-all"
-              onClick={handleShareNative}
+              onClick={handleShare}
             >
-              📤 分享结果
-            </button>
-            <button
-              className="text-sm py-3 px-5 rounded-full border border-gray-600 text-gray-300 hover:border-purple-500 hover:text-white transition-all"
-              onClick={handleCopyLink}
-            >
-              {copied ? '✅ 已复制！' : '🔗 复制链接'}
+              {copied ? '✅ 已复制！' : '📤 分享给好友'}
             </button>
           </div>
         </div>

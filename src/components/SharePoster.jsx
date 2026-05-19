@@ -1,18 +1,18 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { generatePoster } from '../utils/posterGenerator';
 import { downloadImage, copyToClipboard, generateShareText, generateShareUrl } from '../utils/shareUtils';
 import AI_TYPES from '../data/types';
 
 /**
  * SharePoster - Poster preview modal with download and share buttons.
+ * Automatically generates poster on mount.
  *
  * @param {Object} result - { typeId, scores, timestamp }
  * @param {Function} onClose - Callback to close the modal
  */
 export default function SharePoster({ result, onClose }) {
   const [posterUrl, setPosterUrl] = useState(null);
-  const [generating, setGenerating] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [generating, setGenerating] = useState(true);
 
   const type = AI_TYPES.find(t => t.id === result.typeId) || AI_TYPES[0];
 
@@ -27,35 +27,50 @@ export default function SharePoster({ result, onClose }) {
     setGenerating(false);
   }, [result]);
 
+  // Auto-generate poster on mount
+  useEffect(() => {
+    handleGenerate();
+  }, [handleGenerate]);
+
   const handleDownload = useCallback(() => {
     if (posterUrl) {
       downloadImage(posterUrl, `AI段位实况_${type.name}.png`);
     }
   }, [posterUrl, type.name]);
 
-  const handleCopyLink = useCallback(async () => {
-    const url = generateShareUrl(result.typeId);
-    const success = await copyToClipboard(url);
-    setCopied(success);
-    setTimeout(() => setCopied(false), 2000);
-  }, [result.typeId]);
-
   const handleShare = useCallback(async () => {
-    const text = generateShareText(type);
-    const url = generateShareUrl(result.typeId);
+    const shareText = generateShareText(type);
+    const shareUrl = generateShareUrl(result.typeId);
 
+    // Web Share API Level 2: share image file if available and supported
+    if (posterUrl && navigator.canShare) {
+      try {
+        const response = await fetch(posterUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'AI段位实况.png', { type: 'image/png' });
+        const shareData = { title: 'AIR·AI段位实况', text: shareText, files: [file] };
+        if (navigator.canShare(shareData)) {
+          await navigator.share(shareData);
+          return;
+        }
+      } catch (e) {
+        // File sharing not supported or user cancelled, fall through
+      }
+    }
+
+    // Web Share API Level 1: share text + URL
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'AIR·AI段位实况', text, url });
+        await navigator.share({ title: 'AIR·AI段位实况', text: shareText, url: shareUrl });
+        return;
       } catch (e) {
-        // User cancelled
+        // User cancelled, fall through to clipboard
       }
-    } else {
-      await copyToClipboard(`${text}\n${url}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     }
-  }, [type, result.typeId]);
+
+    // Fallback: copy to clipboard
+    await copyToClipboard(`${shareText}\n${shareUrl}`);
+  }, [type, result.typeId, posterUrl]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
@@ -91,53 +106,31 @@ export default function SharePoster({ result, onClose }) {
                 border: `1px dashed ${type.color}40`,
               }}
             >
-              {generating ? (
-                <div className="text-center">
-                  <div className="text-3xl mb-2 animate-spin">🎨</div>
-                  <p className="text-sm text-gray-400">正在生成海报...</p>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <div className="text-4xl mb-3">{type.emoji}</div>
-                  <p className="text-sm text-gray-400">点击下方按钮生成海报</p>
-                </div>
-              )}
+              <div className="text-center">
+                <div className="text-3xl mb-2 animate-spin">🎨</div>
+                <p className="text-sm text-gray-400">正在生成海报...</p>
+              </div>
             </div>
           )}
 
           {/* Action buttons */}
           <div className="space-y-3">
-            {!posterUrl ? (
-              <button
-                className="cta-button w-full text-sm py-3"
-                onClick={handleGenerate}
-                disabled={generating}
-              >
-                {generating ? '生成中...' : '✨ 生成海报'}
-              </button>
-            ) : (
+            {posterUrl && (
               <>
                 <button
                   className="cta-button w-full text-sm py-3"
                   onClick={handleDownload}
                 >
-                  📥 下载海报
+                  📥 保存海报
                 </button>
                 <button
                   className="w-full text-sm py-3 px-6 rounded-full border border-gray-600 text-gray-300 hover:border-purple-500 hover:text-white transition-all"
                   onClick={handleShare}
                 >
-                  📤 分享结果
+                  📤 分享给好友
                 </button>
               </>
             )}
-
-            <button
-              className="w-full text-sm py-3 px-6 rounded-full border border-gray-700 text-gray-400 hover:text-gray-300 transition-all"
-              onClick={handleCopyLink}
-            >
-              {copied ? '✅ 已复制链接！' : '🔗 复制分享链接'}
-            </button>
           </div>
         </div>
       </div>
