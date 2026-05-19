@@ -77,7 +77,8 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
   const handleSave = useCallback(async () => {
     if (!posterUrl) return;
     setSaveStatus('');
-    const result = await saveToAlbum(posterUrl, `AI段位实况_${type.name}.png`);
+    // Pass blob URL for better WeChat compatibility
+    const result = await saveToAlbum(posterUrl, `AI灵魂_${type.name}.png`, blobUrl);
     if (result === 'shared') {
       setSaveStatus('shared');
       setTimeout(() => setSaveStatus(''), 2000);
@@ -91,7 +92,7 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
       setSaveStatus('screenshot');
       setTimeout(() => setSaveStatus(''), 3000);
     }
-  }, [posterUrl, type.name]);
+  }, [posterUrl, blobUrl, type.name]);
 
   const handleShare = useCallback(async () => {
     setShareStatus('');
@@ -118,9 +119,9 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
           ✕
         </button>
 
-        <div className="glass-card p-5">
-          <h3 className="text-base font-bold text-white text-center mb-3">
-            🎨 你的专属海报
+        <div className="glass-card p-4 pb-2">
+          <h3 className="text-lg font-bold text-white text-center mb-2">
+            你的专属海报
           </h3>
 
           {/* Poster preview */}
@@ -128,14 +129,14 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
             <div className="mb-3 rounded-xl overflow-hidden">
               <img
                 src={blobUrl || posterUrl}
-                alt="AI段位实况海报"
+                alt="AI灵魂海报"
                 className="w-full"
-                style={{ maxHeight: '55vh', objectFit: 'contain', touchAction: 'manipulation' }}
+                style={{ maxHeight: '42vh', objectFit: 'contain', touchAction: 'manipulation' }}
               />
-              {/* WeChat screenshot tip */}
+              {/* WeChat long-press save tip */}
               {inWeChat && (
                 <p className="text-xs text-gray-400 text-center mt-2 bg-white/5 py-2 rounded">
-                  📸 长按图片或截图保存海报
+                  👆 长按图片可保存到手机
                 </p>
               )}
             </div>
@@ -159,7 +160,7 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
           {posterUrl && (
             <div className="space-y-2">
               <button
-                className="cta-button w-full text-base py-3"
+                className="cta-button w-full text-lg py-3.5"
                 onClick={handleShare}
               >
                 {shareStatus === 'copied' ? '✅ 链接已复制' :
@@ -167,21 +168,15 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
                  '📤 分享给好友'}
               </button>
               <button
-                className="w-full text-base py-3 px-6 rounded-full border border-gray-600 text-gray-300 hover:border-purple-500 hover:text-white transition-all"
+                className="w-full text-lg py-3.5 px-6 rounded-full border border-gray-600 text-gray-200 hover:border-purple-500 hover:text-white transition-all bg-white/5"
                 onClick={handleSave}
               >
                 {saveStatus === 'shared' ? '✅ 已保存' :
                  saveStatus === 'downloaded' ? '✅ 已下载' :
                  saveStatus === 'opened' ? '✅ 已在新页面打开' :
-                 saveStatus === 'screenshot' ? '📸 请截图保存海报' :
+                 saveStatus === 'screenshot' ? '📸 请截图保存' :
                  '💾 保存到相册'}
               </button>
-              {/* WeChat screenshot guide */}
-              {inWeChat && (
-                <p className="text-xs text-gray-400 text-center mt-2 bg-white/5 py-2 rounded">
-                  📸 微信内请截图保存海报，或点击"保存到相册"
-                </p>
-              )}
             </div>
           )}
         </div>

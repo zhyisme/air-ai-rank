@@ -69,11 +69,11 @@ export async function generatePoster(result) {
   ctx.fillStyle = '#9CA3AF';
   ctx.fillText(`仅 ${rarity}% 的人与你同频`, width / 2, 560);
 
-  // 7. QR code — 200x200, Y=640
+  // 7. QR code — 220x220, Y=620 (larger for better scan)
   const qrData = `${BASE_URL}?ref=${result.typeId}&personality=${result.typeId}`;
   try {
     const qrDataUrl = await QRCode.toDataURL(qrData, {
-      width: 200,
+      width: 220,
       margin: 1,
       color: { dark: '#FFFFFF', light: '#0F0F1A00' },
     });
@@ -83,31 +83,57 @@ export async function generatePoster(result) {
       qrImg.onerror = reject;
       qrImg.src = qrDataUrl;
     });
-    ctx.drawImage(qrImg, width / 2 - 100, 640, 200, 200);
+    ctx.drawImage(qrImg, width / 2 - 110, 620, 220, 220);
   } catch (e) {
     // Fallback: draw a placeholder rectangle
     ctx.strokeStyle = '#4B5563';
     ctx.lineWidth = 2;
-    ctx.strokeRect(width / 2 - 100, 640, 200, 200);
+    ctx.strokeRect(width / 2 - 110, 620, 220, 220);
     ctx.fillStyle = '#6B7280';
     ctx.font = '20px sans-serif';
-    ctx.fillText('扫码测试', width / 2, 740);
+    ctx.fillText('扫码测试', width / 2, 730);
   }
 
-  // 8. Brand identity — 32px, Y=910
+  // 8. Brand LOGO — Eye-catching design with gradient and glow effect
+  // Add a gradient background bar behind the logo
+  const logoGradient = ctx.createLinearGradient(0, 880, 0, 940);
+  logoGradient.addColorStop(0, type.color + '40');
+  logoGradient.addColorStop(0.5, type.color + '20');
+  logoGradient.addColorStop(1, 'transparent');
+  ctx.fillStyle = logoGradient;
+  ctx.fillRect(50, 860, width - 100, 100);
+
+  // Draw a subtle border line above the logo
+  ctx.strokeStyle = type.color + '60';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(100, 875);
+  ctx.lineTo(width - 100, 875);
+  ctx.stroke();
+
+  // Brand text — 48px bold, prominent positioning
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 48px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif';
+  
+  // Add text shadow for depth
+  ctx.shadowColor = type.color;
+  ctx.shadowBlur = 15;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillText('你的AI灵魂', width / 2, 915);
+  
+  // Reset shadow
+  ctx.shadowBlur = 0;
+
+  // URL — 22px, Y=960
+  ctx.font = '22px -apple-system, BlinkMacSystemFont, sans-serif';
   ctx.fillStyle = '#6B7280';
-  ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillText('AIR·AI段位实况', width / 2, 910);
+  ctx.fillText(BASE_URL, width / 2, 960);
 
-  // URL — 24px, Y=950
-  ctx.font = '24px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillStyle = '#4B5563';
-  ctx.fillText(BASE_URL, width / 2, 950);
-
-  // Short label tag — 28px, Y=990
-  ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, sans-serif';
+  // Short label tag — 30px, Y=1000
+  ctx.font = 'bold 30px -apple-system, BlinkMacSystemFont, sans-serif';
   ctx.fillStyle = type.color;
-  ctx.fillText(type.shortLabel, width / 2, 990);
+  ctx.fillText(type.shortLabel, width / 2, 1000);
 
   return canvas.toDataURL('image/png');
 }
