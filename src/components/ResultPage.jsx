@@ -129,14 +129,19 @@ export default function ResultPage({ result, onRetake, onViewRanking }) {
           <p className="text-xs text-gray-400 mb-3">分享给朋友，看看他们的AI灵魂是什么 👇</p>
 
           <div className="flex gap-2 justify-center">
-            {/* Primary: Share button */}
+            {/* Primary: Share via browser menu */}
             <button
-              className="cta-button text-sm py-2.5 px-5 flex-1 max-w-[160px]"
-              onClick={handleShare}
+              className="cta-button text-sm py-2.5 px-5 flex-1 max-w-[200px]"
+              onClick={() => {
+                // Copy link to clipboard and show guide
+                const shareUrl = `https://zhyisme.github.io/air-ai-rank/?ref=${result.typeId}&personality=${result.typeId}`;
+                navigator.clipboard?.writeText(shareUrl).catch(() => {});
+                setShareStatus('copied');
+                setShowWeChatGuide(true);
+                setTimeout(() => setShareStatus(''), 2000);
+              }}
             >
-              {shareStatus === 'copied' ? '✅ 已复制' :
-               shareStatus === 'shared' ? '✅ 已分享' :
-               '📤 分享给好友'}
+              {shareStatus === 'copied' ? '✅ 链接已复制' : '📤 分享给好友'}
             </button>
             {/* Secondary: Poster button */}
             <button
@@ -147,10 +152,10 @@ export default function ResultPage({ result, onRetake, onViewRanking }) {
             </button>
           </div>
 
-          {/* WeChat tip */}
+          {/* WeChat tip - always show */}
           {inWeChat && (
             <p className="text-[11px] text-gray-500 mt-2">
-              微信内点击右上角「···」→ 转发给朋友
+              点击后使用右上角「···」→ 转发给朋友 / 分享朋友圈
             </p>
           )}
         </div>

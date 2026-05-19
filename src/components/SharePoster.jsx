@@ -130,14 +130,6 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
                 className="hidden"
                 crossOrigin="anonymous"
               />
-              {/* WeChat tip */}
-              {inWeChat && (
-                <div className="bg-gradient-to-r from-purple-900/50 to-pink-900/50 px-4 py-3 text-center">
-                  <p className="text-white text-sm font-medium">
-                    👆 长按上方图片可直接保存到手机
-                  </p>
-                </div>
-              )}
             </div>
           ) : (
             <div

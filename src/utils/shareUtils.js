@@ -161,6 +161,22 @@ export async function saveToAlbum(dataUrl, filename = 'AI灵魂海报.png') {
       font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
       -webkit-font-smoothing: antialiased;
     }
+    .close-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #FFFFFF;
+      font-size: 18px;
+      line-height: 36px;
+      text-align: center;
+      cursor: pointer;
+      z-index: 100;
+    }
     .container {
       display: flex;
       flex-direction: column;
@@ -200,6 +216,7 @@ export async function saveToAlbum(dataUrl, filename = 'AI灵魂海报.png') {
   </style>
 </head>
 <body>
+  <div class="close-btn" onclick="window.close()">✕</div>
   <div class="container">
     <img class="poster-img" src="${dataUrl}" alt="海报" />
   </div>
@@ -255,6 +272,22 @@ export async function triggerShare(type, typeId, posterDataUrl) {
       min-height: 100vh;
       background: linear-gradient(180deg, #0F0F1A 0%, #1A1A2E 100%);
       font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    .close-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #FFFFFF;
+      font-size: 18px;
+      line-height: 36px;
+      text-align: center;
+      cursor: pointer;
+      z-index: 100;
     }
     .container {
       display: flex;
@@ -319,6 +352,7 @@ export async function triggerShare(type, typeId, posterDataUrl) {
   </style>
 </head>
 <body>
+  <div class="close-btn" onclick="window.close()">✕</div>
   <div class="container">
     <h1 class="title">📤 分享到朋友圈</h1>
     <p class="quote">${shareText}</p>
