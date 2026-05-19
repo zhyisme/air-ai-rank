@@ -1,17 +1,16 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { generatePoster } from '../utils/posterGenerator';
 import { saveToAlbum, triggerShare, isWeChat } from '../utils/shareUtils';
 import AI_TYPES from '../data/types';
 
 /**
- * SharePoster — poster preview modal with optimized save/share experience.
+ * SharePoster — poster preview modal with optimized layout.
  */
 export default function SharePoster({ result, onClose, onPosterReady }) {
   const [posterUrl, setPosterUrl] = useState(null);
   const [generating, setGenerating] = useState(true);
   const [shareStatus, setShareStatus] = useState('');
   const [saveStatus, setSaveStatus] = useState('');
-  const canvasRef = useRef(null);
 
   const type = AI_TYPES.find(t => t.id === result.typeId) || AI_TYPES[0];
   const inWeChat = isWeChat();
@@ -32,30 +31,14 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
     handleGenerate();
   }, [handleGenerate]);
 
-  // Draw poster on canvas for better long-press save in WeChat
-  useEffect(() => {
-    if (posterUrl && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-      };
-      img.src = posterUrl;
-    }
-  }, [posterUrl]);
-
   const handleSave = useCallback(async () => {
     if (!posterUrl) return;
     setSaveStatus('saving');
-    const result = await saveToAlbum(posterUrl, `AI灵魂_${type.name}.png`);
-    if (result === 'saved' || result === 'downloaded') {
+    const res = await saveToAlbum(posterUrl, `AI灵魂_${type.name}.png`);
+    if (res === 'saved' || res === 'downloaded') {
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus(''), 2000);
-    } else if (result === 'opened') {
+    } else if (res === 'opened') {
       setSaveStatus('opened');
       setTimeout(() => setSaveStatus(''), 2000);
     } else {
@@ -95,88 +78,89 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
-      <div className="relative w-full max-w-sm max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm px-4 py-6">
+      {/* Modal container */}
+      <div className="relative w-full max-w-[360px] flex flex-col max-h-full">
         {/* Close button */}
         <button
-          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+          className="absolute -top-2 -right-2 z-20 w-10 h-10 rounded-full bg-white/15 border border-white/20 flex items-center justify-center text-white text-lg hover:bg-white/25 transition-colors shadow-lg"
           onClick={onClose}
         >
           ✕
         </button>
 
-        <div className="glass-card p-4 pb-3">
-          <h3 className="text-lg font-bold text-white text-center mb-2">
+        {/* Header */}
+        <div className="text-center mb-3">
+          <h3 className="text-xl font-bold text-white">
             你的专属海报
           </h3>
+        </div>
 
-          {/* Poster preview - use canvas for better WeChat compatibility */}
-          {posterUrl ? (
-            <div className="mb-3 rounded-xl overflow-hidden bg-[#0F0F1A]">
-              {/* Canvas for WeChat long-press save */}
-              <canvas
-                ref={canvasRef}
-                className="w-full block"
-                style={{ 
-                  maxHeight: '45vh', 
-                  objectFit: 'contain',
-                  touchAction: 'manipulation'
-                }}
-              />
-              {/* Fallback img for browsers that can't render canvas */}
+        {/* Poster image - using img with aspect ratio */}
+        {posterUrl ? (
+          <div className="flex-1 flex items-center justify-center mb-4">
+            <div 
+              className="relative w-full overflow-hidden rounded-2xl shadow-2xl"
+              style={{
+                aspectRatio: '750/1200',
+                maxHeight: '55vh',
+                background: '#0F0F1A'
+              }}
+            >
               <img
                 src={posterUrl}
                 alt="AI灵魂海报"
-                className="hidden"
-                crossOrigin="anonymous"
+                className="w-full h-full object-contain"
+                style={{ touchAction: 'manipulation' }}
               />
             </div>
-          ) : (
-            <div
-              className="mb-3 rounded-xl flex items-center justify-center"
-              style={{
-                height: '280px',
-                background: `linear-gradient(135deg, ${type.color}15, #0F0F1A)`,
-                border: `1px dashed ${type.color}40`,
-              }}
+          </div>
+        ) : (
+          <div
+            className="mb-4 rounded-2xl flex items-center justify-center"
+            style={{
+              aspectRatio: '750/1200',
+              maxHeight: '55vh',
+              background: `linear-gradient(135deg, ${type.color}15, #0F0F1A)`,
+              border: `1px dashed ${type.color}40`,
+            }}
+          >
+            <div className="text-center">
+              <div className="text-4xl mb-3 animate-pulse">🎨</div>
+              <p className="text-sm text-gray-400">正在生成海报...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        {posterUrl && (
+          <div className="space-y-2.5">
+            {/* Share button */}
+            <button
+              className="cta-button w-full text-lg py-3.5 rounded-xl font-semibold transition-all active:scale-[0.98]"
+              onClick={handleShare}
             >
-              <div className="text-center">
-                <div className="text-3xl mb-2 animate-spin">🎨</div>
-                <p className="text-sm text-gray-400">正在生成海报...</p>
+              {getShareButtonText()}
+            </button>
+
+            {/* Save button */}
+            <button
+              className="w-full text-lg py-3.5 px-6 rounded-xl font-semibold bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all active:scale-[0.98]"
+              onClick={handleSave}
+            >
+              {getSaveButtonText()}
+            </button>
+
+            {/* WeChat guidance */}
+            {inWeChat && (
+              <div className="bg-white/5 rounded-xl p-3 text-center">
+                <p className="text-gray-300 text-sm leading-relaxed">
+                  💡 保存后打开微信朋友圈，点击右上角相机选择图片发布
+                </p>
               </div>
-            </div>
-          )}
-
-          {/* Action buttons */}
-          {posterUrl && (
-            <div className="space-y-3">
-              {/* Share button */}
-              <button
-                className="cta-button w-full text-lg py-4 rounded-xl font-semibold"
-                onClick={handleShare}
-              >
-                {getShareButtonText()}
-              </button>
-
-              {/* Save button */}
-              <button
-                className="w-full text-lg py-4 px-6 rounded-xl font-semibold bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all"
-                onClick={handleSave}
-              >
-                {getSaveButtonText()}
-              </button>
-
-              {/* WeChat guidance */}
-              {inWeChat && (
-                <div className="bg-white/5 rounded-lg p-3 text-center">
-                  <p className="text-gray-300 text-sm">
-                    💡 <span className="text-gray-400">保存后</span>打开微信朋友圈，点击右上角相机📷选择图片发布
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

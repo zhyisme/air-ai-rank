@@ -161,69 +161,84 @@ export async function saveToAlbum(dataUrl, filename = 'AI灵魂海报.png') {
       font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
       -webkit-font-smoothing: antialiased;
     }
-    .close-btn {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      color: #FFFFFF;
-      font-size: 18px;
-      line-height: 36px;
-      text-align: center;
-      cursor: pointer;
-      z-index: 100;
-    }
-    .container {
+    .wrapper {
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
-      padding-bottom: 100px;
+      padding: 60px 20px 120px;
+    }
+    .close-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #FFFFFF;
+      font-size: 20px;
+      line-height: 44px;
+      text-align: center;
+      cursor: pointer;
+      z-index: 100;
+      -webkit-tap-highlight-color: transparent;
     }
     .poster-img {
       width: 100%;
-      max-width: 340px;
-      border-radius: 12px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      max-width: 320px;
+      border-radius: 16px;
+      box-shadow: 0 12px 50px rgba(0,0,0,0.6);
       display: block;
-      -webkit-touch-callout: default;
-      pointer-events: auto;
     }
     .tip {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      background: linear-gradient(transparent, rgba(15,15,26,0.95) 30%);
-      padding: 60px 20px 30px;
+      background: linear-gradient(transparent, rgba(15,15,26,0.98) 40%);
+      padding: 80px 20px 30px;
       text-align: center;
     }
     .tip p {
       color: #FFFFFF;
-      font-size: 16px;
-      margin-bottom: 6px;
+      font-size: 17px;
+      margin-bottom: 8px;
     }
     .tip span {
       color: #9CA3AF;
-      font-size: 13px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
-  <div class="close-btn" onclick="window.close()">✕</div>
-  <div class="container">
+  <div class="close-btn" id="closeBtn">✕</div>
+  <div class="wrapper">
     <img class="poster-img" src="${dataUrl}" alt="海报" />
   </div>
   <div class="tip">
     <p>👆 长按图片选择「保存图片」</p>
     <span>保存后可分享到朋友圈</span>
   </div>
+  <script>
+    document.getElementById('closeBtn').addEventListener('click', function() {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.close();
+      }
+    });
+    document.getElementById('closeBtn').addEventListener('touchend', function(e) {
+      e.preventDefault();
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.close();
+      }
+    });
+  </script>
 </body>
 </html>`;
       newWin.document.write(pageHtml);
@@ -273,87 +288,75 @@ export async function triggerShare(type, typeId, posterDataUrl) {
       background: linear-gradient(180deg, #0F0F1A 0%, #1A1A2E 100%);
       font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
     }
-    .close-btn {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      color: #FFFFFF;
-      font-size: 18px;
-      line-height: 36px;
-      text-align: center;
-      cursor: pointer;
-      z-index: 100;
-    }
-    .container {
+    .wrapper {
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
-      padding-bottom: 100px;
+      padding: 60px 20px 120px;
+    }
+    .close-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #FFFFFF;
+      font-size: 20px;
+      line-height: 44px;
+      text-align: center;
+      cursor: pointer;
+      z-index: 100;
+      -webkit-tap-highlight-color: transparent;
     }
     .title {
       color: #FFFFFF;
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 700;
       text-align: center;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .quote {
       color: #9CA3AF;
-      font-size: 14px;
+      font-size: 15px;
       text-align: center;
-      margin-bottom: 20px;
-      line-height: 1.5;
+      margin-bottom: 24px;
+      line-height: 1.6;
     }
     .poster-img {
       width: 100%;
-      max-width: 340px;
-      border-radius: 12px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      max-width: 320px;
+      border-radius: 16px;
+      box-shadow: 0 12px 50px rgba(0,0,0,0.6);
       display: block;
-      -webkit-touch-callout: default;
     }
     .tip {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      background: linear-gradient(transparent, rgba(15,15,26,0.95) 30%);
-      padding: 60px 20px 30px;
+      background: linear-gradient(transparent, rgba(15,15,26,0.98) 40%);
+      padding: 80px 20px 30px;
       text-align: center;
     }
     .tip p {
       color: #FFFFFF;
-      font-size: 15px;
-      margin-bottom: 6px;
+      font-size: 16px;
+      margin-bottom: 8px;
     }
     .tip span {
       color: #9CA3AF;
-      font-size: 13px;
-    }
-    .copied {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(124, 58, 237, 0.9);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
       font-size: 14px;
     }
   </style>
 </head>
 <body>
-  <div class="close-btn" onclick="window.close()">✕</div>
-  <div class="container">
+  <div class="close-btn" id="closeBtn">✕</div>
+  <div class="wrapper">
     <h1 class="title">📤 分享到朋友圈</h1>
     <p class="quote">${shareText}</p>
     <img class="poster-img" src="${posterDataUrl}" alt="分享海报" />
@@ -362,6 +365,23 @@ export async function triggerShare(type, typeId, posterDataUrl) {
     <p>👆 长按保存图片 → 打开朋友圈发布</p>
     <span>保存后，在朋友圈点击相机图标选择这张图片</span>
   </div>
+  <script>
+    document.getElementById('closeBtn').addEventListener('click', function() {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.close();
+      }
+    });
+    document.getElementById('closeBtn').addEventListener('touchend', function(e) {
+      e.preventDefault();
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.close();
+      }
+    });
+  </script>
 </body>
 </html>`;
         newWin.document.write(pageHtml);
