@@ -1,33 +1,38 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { generatePoster } from '../utils/posterGenerator';
-import { downloadImage, copyToClipboard, generateShareText, generateShareUrl } from '../utils/shareUtils';
+import { downloadImage, triggerShare, isWeChat } from '../utils/shareUtils';
 import AI_TYPES from '../data/types';
 
 /**
- * SharePoster - Poster preview modal with download and share buttons.
- * Automatically generates poster on mount.
+ * SharePoster — poster preview modal.
+ * Auto-generates poster on mount. Optimized for WeChat long-press save.
  *
  * @param {Object} result - { typeId, scores, timestamp }
- * @param {Function} onClose - Callback to close the modal
+ * @param {Function} onClose - Close callback
+ * @param {Function} onPosterReady - Called with poster data URL when ready
  */
-export default function SharePoster({ result, onClose }) {
+export default function SharePoster({ result, onClose, onPosterReady }) {
   const [posterUrl, setPosterUrl] = useState(null);
   const [generating, setGenerating] = useState(true);
+  const [shareStatus, setShareStatus] = useState('');
+  const [showWeChatGuide, setShowWeChatGuide] = useState(false);
 
   const type = AI_TYPES.find(t => t.id === result.typeId) || AI_TYPES[0];
+  const inWeChat = isWeChat();
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true);
     try {
       const url = await generatePoster(result);
       setPosterUrl(url);
+      if (onPosterReady) onPosterReady(url);
     } catch (e) {
-      // Silently handle poster generation failure
+      // Silently handle failure
     }
     setGenerating(false);
-  }, [result]);
+  }, [result, onPosterReady]);
 
-  // Auto-generate poster on mount
+  // Auto-generate on mount
   useEffect(() => {
     handleGenerate();
   }, [handleGenerate]);
@@ -39,37 +44,17 @@ export default function SharePoster({ result, onClose }) {
   }, [posterUrl, type.name]);
 
   const handleShare = useCallback(async () => {
-    const shareText = generateShareText(type);
-    const shareUrl = generateShareUrl(result.typeId);
-
-    // Web Share API Level 2: share image file if available and supported
-    if (posterUrl && navigator.canShare) {
-      try {
-        const response = await fetch(posterUrl);
-        const blob = await response.blob();
-        const file = new File([blob], 'AI段位实况.png', { type: 'image/png' });
-        const shareData = { title: 'AIR·AI段位实况', text: shareText, files: [file] };
-        if (navigator.canShare(shareData)) {
-          await navigator.share(shareData);
-          return;
-        }
-      } catch (e) {
-        // File sharing not supported or user cancelled, fall through
-      }
+    setShareStatus('');
+    const status = await triggerShare(type, result.typeId, posterUrl);
+    if (status === 'wechat-guide') {
+      setShowWeChatGuide(true);
+    } else if (status === 'copied') {
+      setShareStatus('copied');
+      setTimeout(() => setShareStatus(''), 2000);
+    } else if (status === 'shared') {
+      setShareStatus('shared');
+      setTimeout(() => setShareStatus(''), 2000);
     }
-
-    // Web Share API Level 1: share text + URL
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'AIR·AI段位实况', text: shareText, url: shareUrl });
-        return;
-      } catch (e) {
-        // User cancelled, fall through to clipboard
-      }
-    }
-
-    // Fallback: copy to clipboard
-    await copyToClipboard(`${shareText}\n${shareUrl}`);
   }, [type, result.typeId, posterUrl]);
 
   return (
@@ -83,25 +68,32 @@ export default function SharePoster({ result, onClose }) {
           ✕
         </button>
 
-        <div className="glass-card p-6">
-          <h3 className="text-lg font-bold text-white text-center mb-4">
-            🎨 生成你的专属海报
+        <div className="glass-card p-5">
+          <h3 className="text-base font-bold text-white text-center mb-3">
+            🎨 你的专属海报
           </h3>
 
           {/* Poster preview */}
           {posterUrl ? (
-            <div className="mb-4 rounded-xl overflow-hidden">
+            <div className="mb-3 rounded-xl overflow-hidden">
               <img
                 src={posterUrl}
                 alt="AI段位实况海报"
                 className="w-full"
+                style={{ touchAction: 'manipulation' }}
               />
+              {/* WeChat tip */}
+              {inWeChat && (
+                <p className="text-[11px] text-gray-400 text-center mt-2 bg-white/5 py-1.5 rounded">
+                  👆 长按图片 → 保存到手机 → 分享到朋友圈
+                </p>
+              )}
             </div>
           ) : (
             <div
-              className="mb-4 rounded-xl flex items-center justify-center"
+              className="mb-3 rounded-xl flex items-center justify-center"
               style={{
-                height: '300px',
+                height: '280px',
                 background: `linear-gradient(135deg, ${type.color}15, #0F0F1A)`,
                 border: `1px dashed ${type.color}40`,
               }}
@@ -114,26 +106,45 @@ export default function SharePoster({ result, onClose }) {
           )}
 
           {/* Action buttons */}
-          <div className="space-y-3">
-            {posterUrl && (
-              <>
-                <button
-                  className="cta-button w-full text-sm py-3"
-                  onClick={handleDownload}
-                >
-                  📥 保存海报
-                </button>
-                <button
-                  className="w-full text-sm py-3 px-6 rounded-full border border-gray-600 text-gray-300 hover:border-purple-500 hover:text-white transition-all"
-                  onClick={handleShare}
-                >
-                  📤 分享给好友
-                </button>
-              </>
-            )}
-          </div>
+          {posterUrl && (
+            <div className="space-y-2">
+              <button
+                className="cta-button w-full text-sm py-2.5"
+                onClick={handleShare}
+              >
+                {shareStatus === 'copied' ? '✅ 链接已复制' :
+                 shareStatus === 'shared' ? '✅ 已唤起分享' :
+                 '📤 分享给好友'}
+              </button>
+              <button
+                className="w-full text-sm py-2.5 px-6 rounded-full border border-gray-600 text-gray-300 hover:border-purple-500 hover:text-white transition-all"
+                onClick={handleDownload}
+              >
+                📥 保存到相册
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* WeChat Guide Overlay */}
+      {showWeChatGuide && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/80 flex flex-col items-end pt-4 pr-6"
+          onClick={() => setShowWeChatGuide(false)}
+        >
+          <div className="text-right mb-2">
+            <div className="text-4xl mb-2">👆</div>
+            <div className="bg-white text-gray-800 text-sm font-bold px-4 py-2 rounded-lg inline-block">
+              点击右上角「···」<br />
+              <span className="text-xs font-normal text-gray-500">转发给朋友 / 分享到朋友圈</span>
+            </div>
+          </div>
+          <div className="text-white/60 text-xs mt-4 text-center w-full">
+            链接已复制到剪贴板，点击任意处关闭
+          </div>
+        </div>
+      )}
     </div>
   );
 }
