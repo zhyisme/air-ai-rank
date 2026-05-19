@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { generatePoster } from '../utils/posterGenerator';
 import { saveToAlbum, triggerShare, isWeChat } from '../utils/shareUtils';
 import AI_TYPES from '../data/types';
@@ -6,56 +6,17 @@ import AI_TYPES from '../data/types';
 /**
  * SharePoster — poster preview modal.
  * Auto-generates poster on mount.
- * Uses saveToAlbum for multi-strategy image saving.
- *
- * @param {Object} result - { typeId, scores, timestamp }
- * @param {Function} onClose - Close callback
- * @param {Function} onPosterReady - Called with poster data URL when ready
+ * Uses data URL for maximum compatibility with WeChat.
  */
 export default function SharePoster({ result, onClose, onPosterReady }) {
   const [posterUrl, setPosterUrl] = useState(null);
-  const [blobUrl, setBlobUrl] = useState(null);
   const [generating, setGenerating] = useState(true);
   const [shareStatus, setShareStatus] = useState('');
   const [saveStatus, setSaveStatus] = useState('');
-  const [showWeChatGuide, setShowWeChatGuide] = useState(false);
-  const blobUrlRef = useRef(null);
+  const [showTip, setShowTip] = useState(false);
 
   const type = AI_TYPES.find(t => t.id === result.typeId) || AI_TYPES[0];
   const inWeChat = isWeChat();
-
-  // Convert data URL to Blob URL for WeChat long-press save support
-  useEffect(() => {
-    if (posterUrl && posterUrl.startsWith('data:')) {
-      fetch(posterUrl)
-        .then(res => res.blob())
-        .then(blob => {
-          const url = URL.createObjectURL(blob);
-          // Revoke previous blob URL if any
-          if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
-            URL.revokeObjectURL(blobUrlRef.current);
-          }
-          blobUrlRef.current = url;
-          setBlobUrl(url);
-        })
-        .catch(() => {
-          // Fallback: use data URL directly
-          setBlobUrl(posterUrl);
-        });
-    } else if (posterUrl) {
-      setBlobUrl(posterUrl);
-    }
-  }, [posterUrl]);
-
-  // Cleanup blob URL on unmount to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
-        URL.revokeObjectURL(blobUrlRef.current);
-        blobUrlRef.current = null;
-      }
-    };
-  }, []);
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true);
@@ -64,7 +25,7 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
       setPosterUrl(url);
       if (onPosterReady) onPosterReady(url);
     } catch (e) {
-      // Silently handle failure
+      console.error('Failed to generate poster:', e);
     }
     setGenerating(false);
   }, [result, onPosterReady]);
@@ -77,28 +38,28 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
   const handleSave = useCallback(async () => {
     if (!posterUrl) return;
     setSaveStatus('');
-    // Pass blob URL for better WeChat compatibility
-    const result = await saveToAlbum(posterUrl, `AI灵魂_${type.name}.png`, blobUrl);
+    // Always pass data URL - most reliable for WeChat
+    const result = await saveToAlbum(posterUrl, `AI灵魂_${type.name}.png`);
     if (result === 'shared') {
-      setSaveStatus('shared');
+      setSaveStatus('saved');
       setTimeout(() => setSaveStatus(''), 2000);
     } else if (result === 'downloaded') {
-      setSaveStatus('downloaded');
+      setSaveStatus('saved');
       setTimeout(() => setSaveStatus(''), 2000);
     } else if (result === 'opened') {
-      setSaveStatus('opened');
-      setTimeout(() => setSaveStatus(''), 2000);
-    } else if (result === 'wechat-screenshot') {
-      setSaveStatus('screenshot');
+      // Opened save page - no status needed as user is on new page
+    } else if (result === 'failed') {
+      setSaveStatus('failed');
       setTimeout(() => setSaveStatus(''), 3000);
     }
-  }, [posterUrl, blobUrl, type.name]);
+  }, [posterUrl, type.name]);
 
   const handleShare = useCallback(async () => {
+    if (!posterUrl) return;
     setShareStatus('');
     const status = await triggerShare(type, result.typeId, posterUrl);
-    if (status === 'wechat-guide') {
-      setShowWeChatGuide(true);
+    if (status === 'wechat-save-page') {
+      // Opened share page with poster - user will share manually
     } else if (status === 'copied') {
       setShareStatus('copied');
       setTimeout(() => setShareStatus(''), 2000);
@@ -125,15 +86,15 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
           </h3>
 
           {/* Poster preview */}
-          {(blobUrl || posterUrl) ? (
+          {posterUrl ? (
             <div className="mb-3 rounded-xl overflow-hidden">
               <img
-                src={blobUrl || posterUrl}
+                src={posterUrl}
                 alt="AI灵魂海报"
                 className="w-full"
-                style={{ maxHeight: '42vh', objectFit: 'contain', touchAction: 'manipulation' }}
+                style={{ maxHeight: '42vh', objectFit: 'contain' }}
               />
-              {/* WeChat long-press save tip */}
+              {/* WeChat save tip */}
               {inWeChat && (
                 <p className="text-xs text-gray-400 text-center mt-2 bg-white/5 py-2 rounded">
                   👆 长按图片可保存到手机
@@ -163,43 +124,22 @@ export default function SharePoster({ result, onClose, onPosterReady }) {
                 className="cta-button w-full text-lg py-3.5"
                 onClick={handleShare}
               >
-                {shareStatus === 'copied' ? '✅ 链接已复制' :
-                 shareStatus === 'shared' ? '✅ 已唤起分享' :
+                {shareStatus === 'copied' ? '✅ 已复制到剪贴板' :
+                 shareStatus === 'shared' ? '✅ 已分享' :
                  '📤 分享给好友'}
               </button>
               <button
                 className="w-full text-lg py-3.5 px-6 rounded-full border border-gray-600 text-gray-200 hover:border-purple-500 hover:text-white transition-all bg-white/5"
                 onClick={handleSave}
               >
-                {saveStatus === 'shared' ? '✅ 已保存' :
-                 saveStatus === 'downloaded' ? '✅ 已下载' :
-                 saveStatus === 'opened' ? '✅ 已在新页面打开' :
-                 saveStatus === 'screenshot' ? '📸 请截图保存' :
+                {saveStatus === 'saved' ? '✅ 已保存' :
+                 saveStatus === 'failed' ? '❌ 保存失败，请重试' :
                  '💾 保存到相册'}
               </button>
             </div>
           )}
         </div>
       </div>
-
-      {/* WeChat Guide Overlay */}
-      {showWeChatGuide && (
-        <div
-          className="fixed inset-0 z-[60] bg-black/80 flex flex-col items-end pt-4 pr-6"
-          onClick={() => setShowWeChatGuide(false)}
-        >
-          <div className="text-right mb-2">
-            <div className="text-4xl mb-2">👆</div>
-            <div className="bg-white text-gray-800 text-sm font-bold px-4 py-2 rounded-lg inline-block">
-              点击右上角「···」<br />
-              <span className="text-xs font-normal text-gray-500">转发给朋友 / 分享到朋友圈</span>
-            </div>
-          </div>
-          <div className="text-white/60 text-xs mt-4 text-center w-full">
-            链接已复制到剪贴板，点击任意处关闭
-          </div>
-        </div>
-      )}
     </div>
   );
 }

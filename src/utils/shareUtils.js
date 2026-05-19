@@ -19,6 +19,24 @@ export function isWeChat() {
 }
 
 /**
+ * Detect if user is on iOS device.
+ * @returns {boolean}
+ */
+export function isIOS() {
+  if (typeof window === 'undefined') return false;
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+/**
+ * Detect if user is on Android device.
+ * @returns {boolean}
+ */
+export function isAndroid() {
+  if (typeof window === 'undefined') return false;
+  return /Android/i.test(navigator.userAgent);
+}
+
+/**
  * Generate share text for a given AI type.
  * Format: "承认吧，这才是你的AI灵魂！我是🔮AI先知，你呢？"
  */
@@ -72,111 +90,115 @@ export async function copyToClipboard(text) {
 }
 
 /**
- * Save poster image to phone album.
- * Strategy order:
- * 1. Web Share API with file → user can "Save Image" from share sheet (mobile non-WeChat)
- * 2. <a download> (desktop, Chrome Android)
- * 3. Open blob image in new window for long-press save (iOS, WeChat, Android)
- * 4. Direct blob URL for WeChat long-press (most compatible)
- * 5. WeChat screenshot fallback
- *
- * @param {string} dataUrl - base64 data URL of the poster
- * @param {string} filename - filename for download
- * @param {string} blobUrl - optional blob URL for better WeChat compatibility
- * @returns {Promise<string>} 'shared'|'downloaded'|'opened'|'blob-saved'|'wechat-screenshot'|'cancelled'|'failed'
+ * Generate a save page HTML for WeChat with inline base64 image.
+ * This ensures the image is always available for long-press save.
  */
-export async function saveToAlbum(dataUrl, filename = 'AI灵魂海报.png', blobUrl = null) {
-  // Strategy 0: WeChat-specific blob URL approach (most reliable for WeChat)
-  // Use blob URL if available, otherwise convert data URL to blob
-  if (isWeChat()) {
-    try {
-      // Use provided blob URL or create one from data URL
-      const imageUrl = blobUrl || dataUrl;
-      
-      // Try opening in new window with blob URL
-      const newWin = window.open('', '_blank');
-      if (newWin) {
-        // Create a clean, optimized page for saving
-        const pageHtml = `
-<!DOCTYPE html>
+function generateSavePageHtml(dataUrl, typeName) {
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-  <title>保存海报</title>
+  <title>保存海报 - AI灵魂</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
+    html, body {
+      width: 100%;
       min-height: 100vh;
       background: linear-gradient(180deg, #0F0F1A 0%, #1A1A2E 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      min-height: 100vh;
       padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      padding-bottom: 120px;
     }
-    .poster-container {
+    .poster-wrapper {
       width: 100%;
-      max-width: 360px;
+      max-width: 320px;
       border-radius: 16px;
       overflow: hidden;
       box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      background: #0F0F1A;
     }
-    .poster-container img {
+    .poster-wrapper img {
       width: 100%;
       height: auto;
       display: block;
+      touch-action: none;
+      -webkit-touch-callout: default;
+      -webkit-user-select: none;
+      user-select: none;
+      pointer-events: auto;
     }
-    .tip {
-      margin-top: 24px;
-      text-align: center;
-      color: #9CA3AF;
-      font-size: 15px;
-      line-height: 1.6;
-    }
-    .tip strong {
-      color: #FFFFFF;
-      font-size: 16px;
-    }
-    .close-btn {
+    .tip-box {
       position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(15,15,26,0.98) 40%);
+      padding: 40px 20px 30px;
+      text-align: center;
+    }
+    .tip-title {
+      color: #FFFFFF;
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .tip-desc {
       color: #9CA3AF;
-      padding: 12px 40px;
-      border-radius: 25px;
       font-size: 14px;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+    .save-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #7C3AED, #A855F7);
+      color: #FFFFFF;
+      padding: 14px 32px;
+      border-radius: 25px;
+      font-size: 15px;
+      font-weight: 500;
     }
   </style>
 </head>
 <body>
-  <div class="poster-container">
-    <img src="${imageUrl}" crossorigin="anonymous" />
+  <div class="container">
+    <div class="poster-wrapper">
+      <img src="${dataUrl}" alt="AI灵魂海报" />
+    </div>
   </div>
-  <p class="tip">
-    <strong>👆 长按图片</strong><br/>
-    选择「保存图片」<br/>
-    <span style="font-size:13px;color:#6B7280">保存后即可分享到朋友圈</span>
-  </p>
-  <button class="close-btn" onclick="window.close()">✕ 关闭</button>
+  <div class="tip-box">
+    <p class="tip-title">👆 长按图片保存到相册</p>
+    <p class="tip-desc">保存后打开朋友圈，点击右上角相机图标<br/>选择这张图片发布即可</p>
+    <span class="save-btn">✨ AI灵魂</span>
+  </div>
 </body>
 </html>`;
-        newWin.document.write(pageHtml);
-        newWin.document.close();
-        return 'opened';
-      }
-    } catch (e) {
-      // Continue to fallback strategies
-    }
-  }
+}
 
-  // Strategy 1: Web Share API with file (best for mobile - user gets system share sheet)
+/**
+ * Save poster image to phone album.
+ * 
+ * In WeChat: Opens a new page with inline image for long-press save
+ * Other browsers: Uses native share API or download link
+ *
+ * @param {string} dataUrl - base64 data URL of the poster (REQUIRED)
+ * @param {string} filename - filename for download
+ * @returns {Promise<string>} 'opened'|'downloaded'|'saved'|'cancelled'|'failed'
+ */
+export async function saveToAlbum(dataUrl, filename = 'AI灵魂海报.png') {
+  // ALWAYS use data URL for maximum compatibility
+  // Data URL is more reliable than blob URL in WeChat
+  const imageUrl = dataUrl;
+
+  // Strategy 1: Web Share API with file (non-WeChat browsers)
   if (typeof navigator.canShare === 'function' && !isWeChat()) {
     try {
       const response = await fetch(dataUrl);
@@ -189,11 +211,10 @@ export async function saveToAlbum(dataUrl, filename = 'AI灵魂海报.png', blob
       }
     } catch (e) {
       if (e.name === 'AbortError') return 'cancelled';
-      // Fall through
     }
   }
 
-  // Strategy 2: <a download> (works on desktop, Chrome Android)
+  // Strategy 2: <a download> for desktop browsers
   if (!isWeChat()) {
     try {
       const link = document.createElement('a');
@@ -208,9 +229,20 @@ export async function saveToAlbum(dataUrl, filename = 'AI灵魂海报.png', blob
     }
   }
 
-  // Strategy 3: WeChat screenshot fallback
+  // Strategy 3: WeChat - Open optimized save page with inline image
   if (isWeChat()) {
-    return 'wechat-screenshot';
+    try {
+      const newWin = window.open('', '_blank');
+      if (newWin) {
+        // Use data URL directly in the page (most reliable for WeChat)
+        const pageHtml = generateSavePageHtml(imageUrl, filename.replace('.png', ''));
+        newWin.document.write(pageHtml);
+        newWin.document.close();
+        return 'opened';
+      }
+    } catch (e) {
+      console.error('Failed to open save window:', e);
+    }
   }
 
   return 'failed';
@@ -226,54 +258,158 @@ export function getReferralType() {
 }
 
 /**
- * Trigger native sharing.
- *
- * Strategy (in order):
- * 1. Web Share API Level 2: share image file + text (if poster available)
- * 2. Web Share API Level 1: share text + URL
- * 3. In WeChat: copy to clipboard + show guide
- * 4. Fallback: copy text+URL to clipboard
+ * Trigger share functionality.
+ * 
+ * In WeChat: Opens a page with the poster image for saving,
+ * then user can share manually from WeChat
+ * 
+ * Other browsers: Uses native share API
  *
  * @param {Object} type - The AI type object
  * @param {string} typeId - Type ID for URL generation
  * @param {string|null} posterDataUrl - Optional base64 poster image
- * @returns {Promise<string>} Action taken: 'shared'|'copied'|'wechat-guide'|'failed'
+ * @returns {Promise<string>} Action taken
  */
 export async function triggerShare(type, typeId, posterDataUrl = null) {
   const shareText = generateShareText(type);
   const shareUrl = generateShareUrl(typeId);
 
-  // Level 2: Share image + text (Chrome Android, Safari iOS)
-  if (posterDataUrl && typeof navigator.canShare === 'function') {
+  // WeChat: Open save page first, user will share manually after saving
+  if (isWeChat() && posterDataUrl) {
+    try {
+      const newWin = window.open('', '_blank');
+      if (newWin) {
+        const pageHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>分享海报 - AI灵魂</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #0F0F1A 0%, #1A1A2E 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      padding-bottom: 100px;
+    }
+    .share-title {
+      color: #FFFFFF;
+      font-size: 22px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .share-desc {
+      color: #9CA3AF;
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .poster-wrapper {
+      width: 100%;
+      max-width: 320px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .poster-wrapper img {
+      width: 100%;
+      height: auto;
+      display: block;
+      pointer-events: none;
+    }
+    .tip-box {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(15,15,26,0.98) 40%);
+      padding: 40px 20px 30px;
+      text-align: center;
+    }
+    .tip-title {
+      color: #FFFFFF;
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .tip-desc {
+      color: #9CA3AF;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="share-title">📤 分享到朋友圈</h1>
+    <p class="share-desc">${shareText}</p>
+    <div class="poster-wrapper">
+      <img src="${posterDataUrl}" alt="分享海报" />
+    </div>
+  </div>
+  <div class="tip-box">
+    <p class="tip-title">👆 长按保存图片</p>
+    <p class="tip-desc">保存后打开朋友圈，点击相机图标<br/>选择图片发布即可</p>
+  </div>
+</body>
+</html>`;
+        newWin.document.write(pageHtml);
+        newWin.document.close();
+        
+        // Copy share text to clipboard for convenience
+        await copyToClipboard(shareText);
+        
+        return 'wechat-save-page';
+      }
+    } catch (e) {
+      console.error('Failed to open share page:', e);
+    }
+  }
+
+  // Level 2: Web Share API with image file (Chrome Android, Safari iOS)
+  if (posterDataUrl && typeof navigator.canShare === 'function' && !isWeChat()) {
     try {
       const response = await fetch(posterDataUrl);
       const blob = await response.blob();
-      const file = new File([blob], 'AI段位实况.png', { type: 'image/png' });
-      const data = { title: 'AIR·AI段位实况', text: shareText, files: [file] };
+      const file = new File([blob], 'AI灵魂.png', { type: 'image/png' });
+      const data = { title: 'AI灵魂测试', text: shareText, files: [file] };
       if (navigator.canShare(data)) {
         await navigator.share(data);
         return 'shared';
       }
     } catch (e) {
-      // Not supported or cancelled, fall through
+      if (e.name !== 'AbortError') {
+        // Fall through
+      }
     }
   }
 
-  // Level 1: Share text + URL (standard Web Share API)
+  // Level 1: Web Share API with text + URL
   if (typeof navigator.share === 'function' && !isWeChat()) {
     try {
-      await navigator.share({ title: 'AIR·AI段位实况', text: shareText, url: shareUrl });
+      await navigator.share({ title: 'AI灵魂测试', text: shareText, url: shareUrl });
       return 'shared';
     } catch (e) {
-      // User cancelled, fall through
       if (e.name === 'AbortError') return 'cancelled';
     }
   }
 
-  // WeChat or fallback: copy to clipboard
+  // Fallback: Copy to clipboard
   const success = await copyToClipboard(`${shareText}\n${shareUrl}`);
   if (isWeChat()) {
-    return 'wechat-guide'; // Caller should show WeChat guide overlay
+    return 'copied';
   }
   return success ? 'copied' : 'failed';
 }
